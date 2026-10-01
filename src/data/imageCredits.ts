@@ -25,15 +25,8 @@ export interface ImageCredit {
   usageNotes: string;
 }
 
-// Portraits of the seven students, Abby Dings and Adrian D. Ramirez were provided directly
-// by the team, so they need no outside credit.
+// Every portrait (the seven students and the three coaches) was provided directly
+// by the team, so none needs an outside credit. Add entries here for any photo
+// taken from another website.
 export const imageCredits: ImageCredit[] = [
-  {
-    person: "Dr. Debika Sihi",
-    file: "/images/coaches/debika-sihi.jpg",
-    source: "Southwestern University faculty/staff profile",
-    sourceUrl: "https://www.southwestern.edu/live/profiles/25848-debika-sihi",
-    photographer: "",
-    usageNotes: "Official Southwestern University profile headshot.",
-  },
 ];
