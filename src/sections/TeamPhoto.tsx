@@ -11,6 +11,9 @@ import { easeCalm } from "../lib/motion";
 export function TeamPhoto() {
   const reduceMotion = useReducedMotion();
   const present = hasImage(teamPhoto.src);
+  // Without an aspectRatio the photo keeps its own shape and is never cropped;
+  // on tall screens it is scaled down and centred instead.
+  const cropped = Boolean(teamPhoto.aspectRatio?.mobile || teamPhoto.aspectRatio?.desktop);
   const style = {
     ...positionStyle(teamPhoto.objectPosition, "50% 40%"),
     "--ratio-mobile": teamPhoto.aspectRatio?.mobile ?? "auto",
@@ -21,7 +24,7 @@ export function TeamPhoto() {
     <section data-nav="home" aria-label="Team photograph" className="grain pb-24 sm:pb-32 lg:pb-40">
       <figure className="container-site">
         <m.div
-          className="overflow-hidden bg-ink"
+          className={present && !cropped ? "mx-auto w-fit max-w-full overflow-hidden bg-ink" : "overflow-hidden bg-ink"}
           initial={reduceMotion ? false : { clipPath: "inset(4% 3% 4% 3%)" }}
           whileInView={{ clipPath: "inset(0% 0% 0% 0%)" }}
           viewport={{ once: true, amount: 0.15 }}
@@ -34,7 +37,11 @@ export function TeamPhoto() {
               fetchPriority="high"
               decoding="async"
               style={style}
-              className="img-position block max-h-[88vh] w-full object-cover [aspect-ratio:var(--ratio-mobile)] md:[aspect-ratio:var(--ratio-desktop)]"
+              className={
+                cropped
+                  ? "img-position block max-h-[88vh] w-full object-cover [aspect-ratio:var(--ratio-mobile)] md:[aspect-ratio:var(--ratio-desktop)]"
+                  : "block h-auto max-h-[88vh] w-auto max-w-full"
+              }
               initial={reduceMotion ? false : { scale: 1.06 }}
               whileInView={{ scale: 1 }}
               viewport={{ once: true, amount: 0.15 }}

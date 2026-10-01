@@ -56,7 +56,7 @@ export function Competition() {
   );
 }
 
-/** Typographic stand-in until public/images/botb-2026-southwestern.png is added. Decorative — the facts are listed beside it. */
+/** Typographic stand-in until public/images/botb-2026-southwestern.jpg is added. Decorative — the facts are listed beside it. */
 function GraphicPlaceholder() {
   return (
     <div

@@ -60,7 +60,7 @@ npm run preview    # serves the finished dist/ folder so you can check it before
 public/
   favicon.svg
   images/
-    botb-2026-southwestern.png     ← the 2026 competition graphic
+    botb-2026-southwestern.jpg     ← the 2026 competition graphic
     team/
       botb-team-2026.jpg           ← the team photo at the competition
       <student headshots>.jpg
@@ -107,7 +107,7 @@ Photos app's Resize option.
 | Image | Save it as | Used in |
 | --- | --- | --- |
 | Team photo in front of the Home Depot Technology backdrop | `public/images/team/botb-team-2026.jpg` | Large photo right under the opening headline, plus the gallery |
-| 2026 HSI Battle of the Brains / Southwestern graphic | `public/images/botb-2026-southwestern.png` | "The competition" section |
+| 2026 HSI Battle of the Brains / Southwestern graphic | `public/images/botb-2026-southwestern.jpg` | "The competition" section |
 
 To replace either one, save the new file **with exactly the same name** over the old one. Nothing else needs to
 change.
@@ -393,7 +393,7 @@ controls the preview picture when the link is shared) and `githubUrl` in `siteDa
 ## 14. Photo status checklist
 
 Official sources identified for the people below couldn't be downloaded automatically while this site was
-being built, so **every person currently shows an initials placeholder**. Save each photo locally (don't link to
+being built, so **every individual portrait currently shows an initials placeholder** (the team photo and competition graphic are in place). Save each photo locally (don't link to
 the other website) using the file names in [section 4](#4-add-a-student-or-coach-headshot).
 
 | Person | Source | Status |
@@ -408,8 +408,8 @@ the other website) using the file names in [section 4](#4-add-a-student-or-coach
 | Emma Sanchez | Photo from Emma | Waiting |
 | Juan Martinez Varela | Photo from Juan | Waiting |
 | Cody Diez Jennings | Photo from Cody | Waiting |
-| Team photo | `public/images/team/botb-team-2026.jpg` | To add |
-| Competition graphic | `public/images/botb-2026-southwestern.png` | To add |
+| Team photo | `public/images/team/botb-team-2026.jpg` | Added |
+| Competition graphic | `public/images/botb-2026-southwestern.jpg` | Added |
 
 ---
 

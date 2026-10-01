@@ -49,7 +49,7 @@ export const event = {
 
 export const teamPhoto: FeatureImage & { caption: string; date: string } = {
   src: "/images/team/botb-team-2026.jpg",
-  alt: "The Southwestern University team standing together in front of the Home Depot Technology backdrop at the 2026 HSI Battle of the Brains.",
+  alt: "The Southwestern University team smiling together in front of the Home Depot Technology backdrop at the 2026 HSI Battle of the Brains, with a Southwestern University sign held up in front.",
   caption: "Representing Southwestern University at the 2026 HSI Battle of the Brains.",
   date: "September 2026",
   // Leave aspectRatio out to show the whole photo uncropped.
@@ -58,7 +58,7 @@ export const teamPhoto: FeatureImage & { caption: string; date: string } = {
 };
 
 export const competitionGraphic: FeatureImage = {
-  src: "/images/botb-2026-southwestern.png",
+  src: "/images/botb-2026-southwestern.jpg",
   alt: "2026 HSI Battle of the Brains graphic: Southwestern University, 2nd-Year Participant, September 28 – October 2, 2026.",
 };
 
