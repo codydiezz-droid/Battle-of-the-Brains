@@ -2,7 +2,6 @@ import { CoachCard } from "../components/CoachCard";
 import { Reveal } from "../components/Reveal";
 import { SectionLabel } from "../components/SectionLabel";
 import { coaches } from "../data/siteData";
-import { cx } from "../lib/cx";
 
 export function Coaches() {
   return (
@@ -29,9 +28,9 @@ export function Coaches() {
           </Reveal>
         </div>
 
-        <ul className="mt-16 grid gap-14 sm:grid-cols-2 sm:gap-x-6 lg:mt-24 lg:grid-cols-3 lg:gap-x-10">
+        <ul className="mt-16 flex flex-wrap justify-center gap-x-6 gap-y-14 lg:mt-24 lg:gap-x-10">
           {coaches.map((coach, i) => (
-            <li key={coach.name} className={cx(i === 1 && "lg:mt-20", i === 2 && "lg:mt-8")}>
+            <li key={coach.name} className="w-full sm:w-[calc((100%-1.5rem)/2)] lg:w-[calc((100%-5rem)/3)]">
               <Reveal delay={i * 0.08}>
                 <CoachCard coach={coach} index={i} />
               </Reveal>

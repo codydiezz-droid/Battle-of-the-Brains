@@ -402,7 +402,7 @@ controls the preview picture when the link is shared) and `githubUrl` in `siteDa
 | Cody Diez Jennings | `public/images/team/cody-diez-jennings.png` | Added (provided by the team) |
 | Jade Cindy Foka | `public/images/team/jade-foka.jpg` | Added (provided by the team) |
 | Dr. Debika Sihi | `public/images/coaches/debika-sihi.jpg` ([official profile](https://www.southwestern.edu/live/profiles/25848-debika-sihi)) | To download |
-| Abby Dings | `public/images/coaches/abby-dings.jpg` ([official profile](https://www.southwestern.edu/live/profiles/25780-abby-dings)) | To download |
+| Abby Dings | `public/images/coaches/abby-dings.jpg` | Added (provided by the team) |
 | Adrian D. Ramirez | `public/images/coaches/adrian-ramirez.jpg` | Only a photo a Southwestern source clearly identifies as Adrian |
 | Team photo | `public/images/team/botb-team-2026.jpg` | Added |
 | Competition graphic | `public/images/botb-2026-southwestern.jpg` | Added |

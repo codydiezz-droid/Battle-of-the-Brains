@@ -25,7 +25,7 @@ export interface ImageCredit {
   usageNotes: string;
 }
 
-// Portraits of the seven students were provided directly
+// Portraits of the seven students and of Abby Dings were provided directly
 // by the team, so they need no outside credit.
 export const imageCredits: ImageCredit[] = [
   {
@@ -33,14 +33,6 @@ export const imageCredits: ImageCredit[] = [
     file: "/images/coaches/debika-sihi.jpg",
     source: "Southwestern University faculty/staff profile",
     sourceUrl: "https://www.southwestern.edu/live/profiles/25848-debika-sihi",
-    photographer: "",
-    usageNotes: "Official Southwestern University profile headshot.",
-  },
-  {
-    person: "Abby Dings",
-    file: "/images/coaches/abby-dings.jpg",
-    source: "Southwestern University faculty/staff profile",
-    sourceUrl: "https://www.southwestern.edu/live/profiles/25780-abby-dings",
     photographer: "",
     usageNotes: "Official Southwestern University profile headshot.",
   },
