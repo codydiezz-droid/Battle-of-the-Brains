@@ -91,14 +91,14 @@ export function Navigation() {
         <div className="container-site flex h-16 items-center justify-between gap-6">
           <a
             href="#home"
-            className="font-display text-[0.95rem] font-bold uppercase tracking-[-0.01em] [font-stretch:90%]"
+            className="font-display text-[0.8rem] font-bold whitespace-nowrap uppercase tracking-[-0.01em] [font-stretch:90%] sm:text-[0.95rem]"
             onClick={() => setMenuOpen(false)}
           >
-            Southwestern <span className="text-gold-deep">×</span> BOTB
+            Southwestern University <span className="text-gold-deep">×</span> BOTB
           </a>
 
           <nav aria-label="Primary" className="hidden lg:block">
-            <ul className="flex items-center gap-8">
+            <ul className="flex items-center gap-5 xl:gap-8">
               {navItems.map((item) => (
                 <li key={item.id}>
                   <a
