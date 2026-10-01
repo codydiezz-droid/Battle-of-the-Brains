@@ -380,6 +380,17 @@ as a check but not published.
 After that, every change pushed to the default branch goes live automatically within a minute or two. If the
 first automatic run failed before step 2 was done, just re-run it after enabling Pages.
 
+### Publish as a single HTML file
+
+```bash
+npm run build:html
+```
+
+This creates **`dist-html/index.html`**: the whole website in one file, with styles, scripts, fonts and photos
+embedded. Open it straight from your computer, or upload just that file to any web host as `index.html`.
+Large photos make it bigger, so resize them first (see [section 2](#2-where-everything-lives)). With both email
+settings off, the addresses are removed from this file entirely.
+
 **Why it works from a subpath:** `vite.config.ts` uses a relative `base` (`"./"`), and every image path goes
 through a small helper (`asset()` in `src/lib/images.ts`). The same build works at `/Battle-of-the-Brains/`, at
 any other repository name, or on a custom domain, with no changes.

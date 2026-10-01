@@ -12,6 +12,8 @@ export function hasImage(src?: string): src is string {
  * served from a GitHub Pages repository subpath.
  */
 export function asset(src: string): string {
+  // Already a full URL (e.g. an image embedded by the single-file HTML build).
+  if (/^(data:|https?:)/.test(src)) return src;
   return import.meta.env.BASE_URL + src.replace(/^\//, "");
 }
 
