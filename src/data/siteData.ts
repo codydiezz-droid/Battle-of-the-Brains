@@ -218,7 +218,7 @@ export const coaches: Coach[] = [
     firstName: "Adrian",
     initials: "AR",
     email: "ramirezad@southwestern.edu",
-    // Only add a photo that a Southwestern University source clearly identifies as Adrian.
+    // Photo provided and confirmed by the team.
     image: "/images/coaches/adrian-ramirez.jpg",
     role: "Coach",
     title: "",

@@ -25,7 +25,7 @@ export interface ImageCredit {
   usageNotes: string;
 }
 
-// Portraits of the seven students and of Abby Dings were provided directly
+// Portraits of the seven students, Abby Dings and Adrian D. Ramirez were provided directly
 // by the team, so they need no outside credit.
 export const imageCredits: ImageCredit[] = [
   {
