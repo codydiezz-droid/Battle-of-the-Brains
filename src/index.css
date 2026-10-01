@@ -21,8 +21,8 @@
   --color-muted: #5e5850;
   --color-muted-dark: #a8a296;
 
-  --font-display: "Bricolage Grotesque Variable", "Helvetica Neue", Arial, sans-serif;
-  --font-sans: "Instrument Sans Variable", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Bricolage Grotesque Variable", "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Instrument Sans Variable", "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
   --font-serif: "Instrument Serif", Georgia, serif;
 
   --ease-calm: cubic-bezier(0.22, 1, 0.36, 1);

@@ -12,10 +12,11 @@ export function Stat({ value, label }: StatProps) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.6 });
   const reduceMotion = useReducedMotion();
-  const [shown, setShown] = useState(0);
+  const isStatic = import.meta.env.VITE_STATIC_REVEAL === "1";
+  const [shown, setShown] = useState(isStatic ? value : 0);
 
   useEffect(() => {
-    if (!inView) return;
+    if (!inView || isStatic) return;
     if (reduceMotion) {
       setShown(value);
       return;
@@ -29,7 +30,7 @@ export function Stat({ value, label }: StatProps) {
       if (t < 1) frame = requestAnimationFrame(tick);
     });
     return () => cancelAnimationFrame(frame);
-  }, [inView, reduceMotion, value]);
+  }, [inView, isStatic, reduceMotion, value]);
 
   return (
     <div ref={ref} className="flex flex-col-reverse gap-3 border-t border-ink pt-5 sm:pt-6">

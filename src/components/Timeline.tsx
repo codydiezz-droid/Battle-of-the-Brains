@@ -3,7 +3,7 @@ import { useRef } from "react";
 import type { JourneyStep } from "../data/types";
 import { cx } from "../lib/cx";
 import { asset, hasImage } from "../lib/images";
-import { easeCalm } from "../lib/motion";
+import { easeCalm, enter } from "../lib/motion";
 import { pad } from "../lib/text";
 
 interface TimelineProps {
@@ -37,7 +37,7 @@ export function Timeline({ steps }: TimelineProps) {
               <m.span
                 aria-hidden="true"
                 className="absolute top-3 left-0 h-[15px] w-[15px] rounded-full border-2 border-ink lg:top-8 lg:left-1/2 lg:-translate-x-1/2"
-                initial={{ backgroundColor: "#f6f2e9" }}
+                initial={enter({ backgroundColor: "#f6f2e9" })}
                 whileInView={{ backgroundColor: "#f4b41a" }}
                 viewport={{ once: true, margin: "0px 0px -35% 0px" }}
                 transition={{ duration: 0.6, ease: easeCalm }}
@@ -49,7 +49,7 @@ export function Timeline({ steps }: TimelineProps) {
                   "display numeral-outline text-[clamp(3.5rem,9vw,8.5rem)] leading-[0.85] select-none",
                   flip ? "lg:order-2 lg:justify-self-start" : "lg:justify-self-end",
                 )}
-                initial={{ opacity: 0 }}
+                initial={enter({ opacity: 0 })}
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true, amount: 0.5 }}
                 transition={{ duration: 1, ease: easeCalm }}
@@ -62,7 +62,7 @@ export function Timeline({ steps }: TimelineProps) {
                   "mt-4 max-w-md lg:mt-6",
                   flip ? "lg:order-1 lg:justify-self-end" : "lg:justify-self-start",
                 )}
-                initial={{ opacity: 0, y: 16 }}
+                initial={enter({ opacity: 0, y: 16 })}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.4 }}
                 transition={{ duration: 0.9, ease: easeCalm, delay: 0.08 }}

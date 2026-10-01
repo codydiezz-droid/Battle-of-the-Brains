@@ -1,7 +1,7 @@
 import { m } from "framer-motion";
 import { ArrowDown, ArrowRight } from "lucide-react";
 import { coaches, event, team } from "../data/siteData";
-import { easeCalm } from "../lib/motion";
+import { easeCalm, enter } from "../lib/motion";
 import { spellNumber } from "../lib/text";
 
 export function Hero() {
@@ -12,7 +12,7 @@ export function Hero() {
       <div className="container-site pt-10 pb-12 sm:pt-16 lg:pt-20 lg:pb-16">
         <m.div
           className="flex flex-col gap-2 border-b border-ink/15 pb-5 sm:flex-row sm:items-center sm:justify-between"
-          initial={{ opacity: 0 }}
+          initial={enter({ opacity: 0 })}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, ease: easeCalm }}
         >
@@ -30,7 +30,7 @@ export function Hero() {
                 <span key={line} className="block pb-[0.04em] [clip-path:inset(0_-100vw_0_0)]">
                   <m.span
                     className="block"
-                    initial={{ y: "105%" }}
+                    initial={enter({ y: "105%" })}
                     animate={{ y: 0 }}
                     transition={{ duration: 1.1, ease: easeCalm, delay: 0.15 + i * 0.12 }}
                   >
@@ -42,7 +42,7 @@ export function Hero() {
 
             <m.p
               className="mt-8 font-display text-[clamp(1.45rem,2.5vw,2.2rem)] leading-[1.15] font-medium tracking-[-0.015em] lg:mt-10"
-              initial={{ opacity: 0, y: 14 }}
+              initial={enter({ opacity: 0, y: 14 })}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, ease: easeCalm, delay: 0.45 }}
             >
@@ -53,7 +53,7 @@ export function Hero() {
 
           <m.div
             className="lg:col-span-4"
-            initial={{ opacity: 0, y: 14 }}
+            initial={enter({ opacity: 0, y: 14 })}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: easeCalm, delay: 0.6 }}
           >

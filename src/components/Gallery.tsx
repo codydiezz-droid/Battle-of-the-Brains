@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { galleryCategories, type GalleryCategory, type GalleryImage } from "../data/types";
 import { cx } from "../lib/cx";
 import { asset, hasImage } from "../lib/images";
-import { easeCalm } from "../lib/motion";
+import { easeCalm, enter } from "../lib/motion";
 import { Dialog } from "./Dialog";
 
 interface GalleryProps {
@@ -66,7 +66,7 @@ export function Gallery({ images, emptyMessage }: GalleryProps) {
           <m.li
             key={img.src + img.category}
             className="mb-5 break-inside-avoid lg:mb-6"
-            initial={{ opacity: 0, y: 14 }}
+            initial={enter({ opacity: 0, y: 14 })}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.15 }}
             transition={{ duration: 0.8, ease: easeCalm, delay: (i % 3) * 0.06 }}
@@ -169,7 +169,7 @@ function Lightbox({ images, index, onClose, onNavigate }: LightboxProps) {
               src={asset(image.src)}
               alt={image.alt}
               className="max-h-full max-w-full object-contain"
-              initial={{ opacity: 0 }}
+              initial={enter({ opacity: 0 })}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, ease: easeCalm }}
             />

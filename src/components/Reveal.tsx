@@ -1,5 +1,5 @@
 import { m, type HTMLMotionProps } from "framer-motion";
-import { easeCalm } from "../lib/motion";
+import { easeCalm, enter } from "../lib/motion";
 
 type RevealProps = HTMLMotionProps<"div"> & {
   delay?: number;
@@ -11,7 +11,7 @@ type RevealProps = HTMLMotionProps<"div"> & {
 export function Reveal({ delay = 0, y = 18, children, ...rest }: RevealProps) {
   return (
     <m.div
-      initial={{ opacity: 0, y }}
+      initial={enter({ opacity: 0, y })}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 0.9, ease: easeCalm, delay }}
