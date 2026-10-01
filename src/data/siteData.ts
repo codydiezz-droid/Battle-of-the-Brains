@@ -201,7 +201,7 @@ export const coaches: Coach[] = [
     title: "",
     profileUrl: "https://www.southwestern.edu/live/profiles/25848-debika-sihi",
     bio: "",
-    linkedin: "",
+    linkedin: "https://www.linkedin.com/in/debika-sihi-23059b4/",
   },
   {
     name: "Abby Dings",
@@ -213,7 +213,7 @@ export const coaches: Coach[] = [
     title: "",
     profileUrl: "https://www.southwestern.edu/live/profiles/25780-abby-dings",
     bio: "",
-    linkedin: "",
+    linkedin: "https://www.linkedin.com/in/abby-dings-b91b85163/",
   },
   {
     name: "Adrian D. Ramirez",
@@ -226,7 +226,7 @@ export const coaches: Coach[] = [
     title: "",
     profileUrl: "",
     bio: "",
-    linkedin: "",
+    linkedin: "https://www.linkedin.com/in/adriandramirez/",
   },
 ];
 
