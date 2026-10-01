@@ -59,7 +59,7 @@ function ProfileContent({ member, tone, prev, next, onPrev, onNext, onClose }: P
   return (
     <div className="grid max-h-[calc(100dvh-2rem)] w-[min(60rem,calc(100vw-2rem))] grid-rows-[auto_1fr] overflow-y-auto bg-cream text-ink md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] md:grid-rows-1">
       <div className="aspect-[4/3] md:aspect-auto md:min-h-[34rem]">
-        <Portrait person={member} tone={tone} eager />
+        <Portrait person={member} tone={tone} eager soft />
       </div>
 
       <div className="flex flex-col p-6 sm:p-10">

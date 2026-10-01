@@ -15,6 +15,8 @@ interface PortraitProps {
   eager?: boolean;
   /** "compact" centres the initials — use it for small or round frames. */
   variant?: "full" | "compact";
+  /** Light sand placeholder, so a missing photo doesn't outweigh real portraits next to it. */
+  soft?: boolean;
 }
 
 /**
@@ -28,6 +30,7 @@ export function Portrait({
   imgClassName,
   eager = false,
   variant = "full",
+  soft = false,
 }: PortraitProps) {
   if (hasImage(person.image)) {
     return (
@@ -62,15 +65,16 @@ export function Portrait({
     <div
       aria-hidden="true"
       className={cx(
-        "grain-light @container relative flex h-full w-full flex-col justify-between overflow-hidden text-cream",
-        tones[tone % tones.length],
+        "@container relative flex h-full w-full flex-col justify-between overflow-hidden",
+        soft ? "grain bg-sand-deep text-ink" : ["grain-light text-cream", tones[tone % tones.length]].join(" "),
         className,
       )}
     >
       <span className="m-[8cqw] block h-px w-[14cqw] bg-gold" />
       <span
         className={cx(
-          "display m-[7cqw] block text-[38cqw] leading-[0.8] tracking-[-0.02em] text-cream/95",
+          "display m-[7cqw] block text-[38cqw] leading-[0.8] tracking-[-0.02em]",
+          soft ? "text-ink/85" : "text-cream/95",
           imgClassName,
         )}
       >

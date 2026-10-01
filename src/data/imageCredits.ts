@@ -25,16 +25,9 @@ export interface ImageCredit {
   usageNotes: string;
 }
 
+// Portraits of Asin, Emma, Alyanna, Elias, Juan and Cody were provided directly
+// by the team, so they need no outside credit.
 export const imageCredits: ImageCredit[] = [
-  {
-    person: "Asin Fathima Allavudeen",
-    file: "/images/team/asin-allavudeen.jpg",
-    source: "Imagining America — 2026–2027 Joy of Giving Something Fellows",
-    sourceUrl: "https://imaginingamerica.org/what-we-do/fellowships/jgs-fellows/",
-    photographer: "",
-    usageNotes:
-      "Fellowship profile portrait that identifies Asin by name. Confirm reuse is appropriate (or ask Asin for a preferred photo) before saving it locally.",
-  },
   {
     person: "Jade Cindy Foka",
     file: "/images/team/jade-foka.jpg",
@@ -42,22 +35,6 @@ export const imageCredits: ImageCredit[] = [
     sourceUrl: "https://www.southwestern.edu/live/news/17394-jade-cindy-foka-28-becomes-third-student-in",
     photographer: "",
     usageNotes: "Portrait from an official Southwestern University feature about Jade.",
-  },
-  {
-    person: "Alyanna Martinez",
-    file: "/images/team/alyanna-martinez.jpg",
-    source: "Southwestern University Learning Commons — Meet the Peer Academic Mentors",
-    sourceUrl: "https://www.southwestern.edu/learning-commons/meet-the-peer-academic-mentors/",
-    photographer: "",
-    usageNotes: "Official headshot on a Southwestern page that identifies Alyanna by name.",
-  },
-  {
-    person: "Elias Sarwana",
-    file: "/images/team/elias-sarwana.jpg",
-    source: "Southwestern University Learning Commons — Meet the Peer Academic Mentors",
-    sourceUrl: "https://www.southwestern.edu/learning-commons/meet-the-peer-academic-mentors/",
-    photographer: "",
-    usageNotes: "Official headshot on a Southwestern page that identifies Elias by name.",
   },
   {
     person: "Dr. Debika Sihi",

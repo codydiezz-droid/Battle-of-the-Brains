@@ -86,9 +86,11 @@ export const gratitude = {
 
 /* ──────────────────────────── The Seven ───────────────────────────── */
 /*
- * Listed in no particular order — every member gets the same space on the page.
- * Photos: save the file at the path in `image` and it appears automatically.
- * See src/data/imageCredits.ts for where each approved photo came from.
+ * Every member gets the same space on the page; the order is not a ranking.
+ * Portraits for the first six were provided and confirmed by the team.
+ * Jade shows an initials placeholder until a preferred photo is added at
+ * public/images/team/jade-foka.jpg. Save a file at the path in `image` and it
+ * appears automatically.
  */
 
 export const team: TeamMember[] = [
@@ -97,7 +99,9 @@ export const team: TeamMember[] = [
     firstName: "Asin",
     initials: "AF",
     email: "allavudea@southwestern.edu",
-    image: "/images/team/asin-allavudeen.jpg",
+    image: "/images/team/asin-allavudeen.png",
+    // Fine-tune the crop if a face sits off-centre, e.g. "50% 30%".
+    objectPosition: "50% 25%",
     major: "",
     classYear: "",
     bio: "",
@@ -108,18 +112,61 @@ export const team: TeamMember[] = [
     firstName: "Emma",
     initials: "ES",
     email: "sancheze@southwestern.edu",
-    image: "/images/team/emma-sanchez.jpg",
+    image: "/images/team/emma-sanchez.png",
+    // Fine-tune the crop if a face sits off-centre, e.g. "50% 30%".
+    objectPosition: "50% 25%",
     major: "",
     classYear: "",
     bio: "",
     linkedin: "",
   },
   {
-    name: "Juan Martinez Varela",
+    name: "Alyanna Martinez",
+    firstName: "Alyanna",
+    initials: "AM",
+    email: "martineza@southwestern.edu",
+    image: "/images/team/alyanna-martinez.png",
+    // Fine-tune the crop if a face sits off-centre, e.g. "50% 30%".
+    objectPosition: "50% 25%",
+    major: "",
+    classYear: "",
+    bio: "",
+    linkedin: "",
+  },
+  {
+    name: "Elias Sarwana",
+    firstName: "Elias",
+    initials: "ES",
+    email: "sarwanae@southwestern.edu",
+    image: "/images/team/elias-sarwana.png",
+    // Fine-tune the crop if a face sits off-centre, e.g. "50% 30%".
+    objectPosition: "50% 25%",
+    major: "",
+    classYear: "",
+    bio: "",
+    linkedin: "",
+  },
+  {
+    name: "Juan Carlos",
     firstName: "Juan",
-    initials: "JM",
+    initials: "JC",
     email: "martinez2@southwestern.edu",
-    image: "/images/team/juan-martinez-varela.jpg",
+    image: "/images/team/juan-carlos.png",
+    // Fine-tune the crop if a face sits off-centre, e.g. "50% 30%".
+    objectPosition: "50% 25%",
+    major: "",
+    classYear: "",
+    bio: "",
+    linkedin: "",
+  },
+  {
+    name: "Cody Diez Jennings",
+    firstName: "Cody",
+    initials: "CD",
+    email: "diezjennc@southwestern.edu",
+    image: "/images/team/cody-diez-jennings.png",
+    // Fine-tune the crop if a face sits off-centre, e.g. "50% 30%".
+    objectPosition: "50% 25%",
     major: "",
     classYear: "",
     bio: "",
@@ -131,39 +178,8 @@ export const team: TeamMember[] = [
     initials: "JF",
     email: "fokaj@southwestern.edu",
     image: "/images/team/jade-foka.jpg",
-    major: "",
-    classYear: "",
-    bio: "",
-    linkedin: "",
-  },
-  {
-    name: "Cody Diez Jennings",
-    firstName: "Cody",
-    initials: "CD",
-    email: "diezjennc@southwestern.edu",
-    image: "/images/team/cody-diez.jpg",
-    major: "",
-    classYear: "",
-    bio: "",
-    linkedin: "",
-  },
-  {
-    name: "Elias Sarwana",
-    firstName: "Elias",
-    initials: "ES",
-    email: "sarwanae@southwestern.edu",
-    image: "/images/team/elias-sarwana.jpg",
-    major: "",
-    classYear: "",
-    bio: "",
-    linkedin: "",
-  },
-  {
-    name: "Alyanna Martinez",
-    firstName: "Alyanna",
-    initials: "AM",
-    email: "martineza@southwestern.edu",
-    image: "/images/team/alyanna-martinez.jpg",
+    // Fine-tune the crop if a face sits off-centre, e.g. "50% 30%".
+    objectPosition: "50% 25%",
     major: "",
     classYear: "",
     bio: "",

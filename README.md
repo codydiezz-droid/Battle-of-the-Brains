@@ -142,19 +142,19 @@ scrape LinkedIn profile pictures.
 
    | Person | File |
    | --- | --- |
-   | Asin Fathima Allavudeen | `public/images/team/asin-allavudeen.jpg` |
-   | Emma Sanchez | `public/images/team/emma-sanchez.jpg` |
-   | Juan Martinez Varela | `public/images/team/juan-martinez-varela.jpg` |
+   | Asin Fathima Allavudeen | `public/images/team/asin-allavudeen.png` |
+   | Emma Sanchez | `public/images/team/emma-sanchez.png` |
+   | Juan Carlos | `public/images/team/juan-carlos.png` |
    | Jade Cindy Foka | `public/images/team/jade-foka.jpg` |
-   | Cody Diez Jennings | `public/images/team/cody-diez.jpg` |
-   | Elias Sarwana | `public/images/team/elias-sarwana.jpg` |
-   | Alyanna Martinez | `public/images/team/alyanna-martinez.jpg` |
+   | Cody Diez Jennings | `public/images/team/cody-diez-jennings.png` |
+   | Elias Sarwana | `public/images/team/elias-sarwana.png` |
+   | Alyanna Martinez | `public/images/team/alyanna-martinez.png` |
    | Dr. Debika Sihi | `public/images/coaches/debika-sihi.jpg` |
    | Abby Dings | `public/images/coaches/abby-dings.jpg` |
    | Adrian D. Ramirez | `public/images/coaches/adrian-ramirez.jpg` |
 
 2. That's it: the photo replaces the initials automatically. Portrait-shaped photos (taller than wide) look
-   best; the cards use a 4:5 frame.
+   best; the cards use a 4:5 frame. PNG or JPEG both work, as long as the extension matches the `image` path.
 3. If the photo came from a website, add or update its entry in `src/data/imageCredits.ts`
    (see [section 12](#12-image-credits)).
 
@@ -392,24 +392,24 @@ controls the preview picture when the link is shared) and `githubUrl` in `siteDa
 
 ## 14. Photo status checklist
 
-Official sources identified for the people below couldn't be downloaded automatically while this site was
-being built, so **every individual portrait currently shows an initials placeholder** (the team photo and competition graphic are in place). Save each photo locally (don't link to
-the other website) using the file names in [section 4](#4-add-a-student-or-coach-headshot).
-
-| Person | Source | Status |
+| Person | Photo | Status |
 | --- | --- | --- |
-| Asin Fathima Allavudeen | [Imagining America: JGS Fellows](https://imaginingamerica.org/what-we-do/fellowships/jgs-fellows/) | To download. Check reuse is OK, or ask Asin for a preferred photo |
-| Jade Cindy Foka | [Southwestern University News](https://www.southwestern.edu/live/news/17394-jade-cindy-foka-28-becomes-third-student-in) | To download |
-| Alyanna Martinez | [SU Learning Commons: Peer Academic Mentors](https://www.southwestern.edu/learning-commons/meet-the-peer-academic-mentors/) | To download |
-| Elias Sarwana | [SU Learning Commons: Peer Academic Mentors](https://www.southwestern.edu/learning-commons/meet-the-peer-academic-mentors/) | To download |
-| Dr. Debika Sihi | [Southwestern profile](https://www.southwestern.edu/live/profiles/25848-debika-sihi) | To download |
-| Abby Dings | [Southwestern profile](https://www.southwestern.edu/live/profiles/25780-abby-dings) | To download |
-| Adrian D. Ramirez | Only a photo a Southwestern source clearly identifies as Adrian | Waiting for a source |
-| Emma Sanchez | Photo from Emma | Waiting |
-| Juan Martinez Varela | Photo from Juan | Waiting |
-| Cody Diez Jennings | Photo from Cody | Waiting |
+| Asin Fathima Allavudeen | `public/images/team/asin-allavudeen.png` | Provided by the team. Add the file |
+| Emma Sanchez | `public/images/team/emma-sanchez.png` | Provided by the team. Add the file |
+| Alyanna Martinez | `public/images/team/alyanna-martinez.png` | Provided by the team. Add the file |
+| Elias Sarwana | `public/images/team/elias-sarwana.png` | Provided by the team. Add the file |
+| Juan Carlos | `public/images/team/juan-carlos.png` | Provided by the team. Add the file |
+| Cody Diez Jennings | `public/images/team/cody-diez-jennings.png` | Provided by the team. Add the file |
+| Jade Cindy Foka | `public/images/team/jade-foka.jpg` | Initials (JF) until a preferred photo is provided |
+| Dr. Debika Sihi | `public/images/coaches/debika-sihi.jpg` ([official profile](https://www.southwestern.edu/live/profiles/25848-debika-sihi)) | To download |
+| Abby Dings | `public/images/coaches/abby-dings.jpg` ([official profile](https://www.southwestern.edu/live/profiles/25780-abby-dings)) | To download |
+| Adrian D. Ramirez | `public/images/coaches/adrian-ramirez.jpg` | Only a photo a Southwestern source clearly identifies as Adrian |
 | Team photo | `public/images/team/botb-team-2026.jpg` | Added |
 | Competition graphic | `public/images/botb-2026-southwestern.jpg` | Added |
+
+Student cards all use the same 4:5 frame with slightly rounded corners and `object-fit: cover`, so photos with
+different crops and backgrounds still line up. If a face sits off-centre, adjust that student's
+`objectPosition` (see [section 6](#6-change-image-positioning-cropping)). Photos are never filtered or retouched.
 
 ---
 

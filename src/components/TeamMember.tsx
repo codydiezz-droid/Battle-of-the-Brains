@@ -18,14 +18,14 @@ export function TeamMember({ member, index, onOpen }: TeamMemberProps) {
   const details = [member.major, member.classYear && formatYear(member.classYear)].filter(Boolean).join(" · ");
 
   return (
-    <article className="group relative outline-offset-[6px] has-[button:focus-visible]:outline-2 has-[button:focus-visible]:outline-gold-deep has-[button:focus-visible]:outline-solid">
-      <div className="relative aspect-[4/5] overflow-hidden bg-sand">
-        <div className="h-full w-full transition-transform duration-[1200ms] ease-calm group-hover:scale-[1.04] group-has-[button:focus-visible]:scale-[1.04]">
-          <Portrait person={member} tone={index} />
+    <article className="group relative rounded-lg outline-offset-[6px] has-[button:focus-visible]:outline-2 has-[button:focus-visible]:outline-gold-deep has-[button:focus-visible]:outline-solid">
+      <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-sand">
+        <div className="h-full w-full transition-transform duration-[1200ms] ease-calm group-hover:scale-[1.03] group-has-[button:focus-visible]:scale-[1.03]">
+          <Portrait person={member} tone={index} soft />
         </div>
         <span
           aria-hidden="true"
-          className="absolute bottom-3 left-3 inline-flex translate-y-2 items-center gap-1 bg-cream px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-ink opacity-0 transition-all duration-500 ease-calm group-hover:translate-y-0 group-hover:opacity-100 group-has-[button:focus-visible]:translate-y-0 group-has-[button:focus-visible]:opacity-100"
+          className="absolute bottom-3 left-3 inline-flex rounded translate-y-2 items-center gap-1 bg-cream px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-ink opacity-0 transition-all duration-500 ease-calm group-hover:translate-y-0 group-hover:opacity-100 group-has-[button:focus-visible]:translate-y-0 group-has-[button:focus-visible]:opacity-100"
         >
           Meet {member.firstName}
           <ArrowUpRight className="h-3.5 w-3.5" />
@@ -36,7 +36,7 @@ export function TeamMember({ member, index, onOpen }: TeamMemberProps) {
         <span className="absolute inset-0 origin-left scale-x-0 bg-gold transition-transform duration-700 ease-calm group-hover:scale-x-100 group-has-[button:focus-visible]:scale-x-100" />
       </div>
 
-      <h3 className="mt-4 font-display text-[1.2rem] font-semibold leading-[1.15] tracking-[-0.01em] sm:text-[1.35rem]">
+      <h3 className="mt-4 font-display text-[1.15rem] font-semibold leading-[1.15] tracking-[-0.01em] text-ink/80 transition-colors duration-500 group-hover:text-ink group-has-[button:focus-visible]:text-ink sm:text-[1.3rem]">
         <button
           type="button"
           onClick={onOpen}
