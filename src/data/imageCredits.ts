@@ -25,17 +25,9 @@ export interface ImageCredit {
   usageNotes: string;
 }
 
-// Portraits of Asin, Emma, Alyanna, Elias, Juan and Cody were provided directly
+// Portraits of the seven students were provided directly
 // by the team, so they need no outside credit.
 export const imageCredits: ImageCredit[] = [
-  {
-    person: "Jade Cindy Foka",
-    file: "/images/team/jade-foka.jpg",
-    source: "Southwestern University News",
-    sourceUrl: "https://www.southwestern.edu/live/news/17394-jade-cindy-foka-28-becomes-third-student-in",
-    photographer: "",
-    usageNotes: "Portrait from an official Southwestern University feature about Jade.",
-  },
   {
     person: "Dr. Debika Sihi",
     file: "/images/coaches/debika-sihi.jpg",

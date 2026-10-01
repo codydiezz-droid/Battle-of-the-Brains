@@ -87,10 +87,8 @@ export const gratitude = {
 /* ──────────────────────────── The Seven ───────────────────────────── */
 /*
  * Every member gets the same space on the page; the order is not a ranking.
- * Portraits for the first six were provided and confirmed by the team.
- * Jade shows an initials placeholder until a preferred photo is added at
- * public/images/team/jade-foka.jpg. Save a file at the path in `image` and it
- * appears automatically.
+ * Portraits were provided and confirmed by the team. Save a file at the path
+ * in `image` and it appears automatically; until then initials are shown.
  */
 
 export const team: TeamMember[] = [

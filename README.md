@@ -400,7 +400,7 @@ controls the preview picture when the link is shared) and `githubUrl` in `siteDa
 | Elias Sarwana | `public/images/team/elias-sarwana.png` | Provided by the team. Add the file |
 | Juan Carlos | `public/images/team/juan-carlos.png` | Provided by the team. Add the file |
 | Cody Diez Jennings | `public/images/team/cody-diez-jennings.png` | Provided by the team. Add the file |
-| Jade Cindy Foka | `public/images/team/jade-foka.jpg` | Initials (JF) until a preferred photo is provided |
+| Jade Cindy Foka | `public/images/team/jade-foka.jpg` | Added (provided by the team) |
 | Dr. Debika Sihi | `public/images/coaches/debika-sihi.jpg` ([official profile](https://www.southwestern.edu/live/profiles/25848-debika-sihi)) | To download |
 | Abby Dings | `public/images/coaches/abby-dings.jpg` ([official profile](https://www.southwestern.edu/live/profiles/25780-abby-dings)) | To download |
 | Adrian D. Ramirez | `public/images/coaches/adrian-ramirez.jpg` | Only a photo a Southwestern source clearly identifies as Adrian |
