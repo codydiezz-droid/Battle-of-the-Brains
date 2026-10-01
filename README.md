@@ -364,22 +364,21 @@ A small "Photo credits" list appears in the footer, but only for photos that are
 
 ## 13. Deploy to GitHub Pages
 
-The repository already includes a deployment workflow (`.github/workflows/deploy.yml`). It builds the site and
-publishes it every time the `main` branch changes. Pull requests are built as a check but not published.
+The repository includes a deployment workflow (`.github/workflows/deploy.yml`). It builds the site and
+publishes it every time the repository's **default branch** changes. Other branches and pull requests are built
+as a check but not published.
 
 **One-time setup:**
 
-1. Make sure the site is on a branch called **`main`** (merge your pull request into `main`, or create `main`
-   from your working branch).
-2. On GitHub, open the repository → **Settings** → **Pages**.
-3. Under **Build and deployment → Source**, choose **GitHub Actions**.
-4. Open the **Actions** tab. The "Deploy to GitHub Pages" workflow runs on the next push to `main` (or click
-   **Run workflow** to start it by hand).
-5. When it finishes, the site is live at:
+1. On GitHub, open the repository → **Settings** → **Pages**.
+2. Under **Build and deployment → Source**, choose **GitHub Actions**.
+3. Open the **Actions** tab → **Deploy to GitHub Pages** → **Run workflow** (on the default branch).
+4. When the run shows a green ✓ (1–2 minutes), the site is live at:
 
    **https://codydiezz-droid.github.io/Battle-of-the-Brains/**
 
-After that, every change merged into `main` goes live automatically within a minute or two.
+After that, every change pushed to the default branch goes live automatically within a minute or two. If the
+first automatic run failed before step 2 was done, just re-run it after enabling Pages.
 
 **Why it works from a subpath:** `vite.config.ts` uses a relative `base` (`"./"`), and every image path goes
 through a small helper (`asset()` in `src/lib/images.ts`). The same build works at `/Battle-of-the-Brains/`, at

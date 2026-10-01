@@ -1,9 +1,9 @@
 name: Deploy to GitHub Pages
 
 on:
-  # Publish whenever main changes.
+  # Publish whenever the repository's default branch changes
+  # (other branches are only built as a check).
   push:
-    branches: [main]
   # Check that pull requests still build (nothing is published).
   pull_request:
   # Allow a manual run from the Actions tab.
@@ -35,17 +35,17 @@ jobs:
       - run: npm run build
 
       - name: Prepare Pages upload
-        if: github.event_name != 'pull_request'
+        if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         uses: actions/configure-pages@v5
 
       - name: Upload site
-        if: github.event_name != 'pull_request'
+        if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
-    if: github.event_name != 'pull_request'
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     needs: build
     runs-on: ubuntu-latest
     environment:
