@@ -1,0 +1,168 @@
+@import "@fontsource-variable/bricolage-grotesque/standard.css";
+@import "@fontsource-variable/instrument-sans/index.css";
+@import "@fontsource/instrument-serif/latin-400-italic.css";
+@import "tailwindcss";
+
+/* ───────────────────────────── Design tokens ───────────────────────────── */
+
+@theme {
+  --color-ink: #111111;
+  --color-ink-soft: #1b1a18;
+  --color-espresso: #2b2620;
+  --color-gold: #f4b41a;
+  /* Gold for text on light backgrounds (meets WCAG AA). */
+  --color-gold-deep: #8a5f00;
+  /* Warmer gold for large display headings on light backgrounds (AA for large text). */
+  --color-gold-warm: #a87400;
+  --color-cream: #f6f2e9;
+  --color-sand: #ece5d6;
+  --color-paper: #ffffff;
+  --color-green: #1f4a3a;
+  --color-muted: #5e5850;
+  --color-muted-dark: #a8a296;
+
+  --font-display: "Bricolage Grotesque Variable", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Instrument Sans Variable", "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Instrument Serif", Georgia, serif;
+
+  --ease-calm: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ─────────────────────────────── Base ─────────────────────────────── */
+
+@layer base {
+  html {
+    scroll-padding-top: 5rem;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  body {
+    background-color: var(--color-cream);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: var(--color-gold);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-gold-deep);
+    outline-offset: 3px;
+  }
+
+  .on-dark :focus-visible,
+  .on-dark:focus-visible {
+    outline-color: var(--color-gold);
+  }
+
+  dialog::backdrop {
+    background: rgb(17 17 17 / 0.82);
+    backdrop-filter: blur(4px);
+  }
+}
+
+/* ───────────────────────────── Utilities ───────────────────────────── */
+
+/* Editorial display headings */
+@utility display {
+  font-family: var(--font-display);
+  font-weight: 760;
+  font-stretch: 84%;
+  letter-spacing: -0.022em;
+  line-height: 0.9;
+  text-transform: uppercase;
+  font-optical-sizing: auto;
+}
+
+@utility eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+@utility container-site {
+  width: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+  @media (width >= 40rem) {
+    padding-inline: 2rem;
+  }
+  @media (width >= 64rem) {
+    padding-inline: 3rem;
+  }
+}
+
+/* object-position that changes between phones and larger screens (see lib/images.ts) */
+@utility img-position {
+  object-position: var(--pos-mobile, 50% 50%);
+  @media (width >= 48rem) {
+    object-position: var(--pos-desktop, 50% 50%);
+  }
+}
+
+/* Subtle film grain. Add `grain` to a positioned element. */
+@utility grain {
+  position: relative;
+  isolation: isolate;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.07;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+
+@utility grain-light {
+  position: relative;
+  isolation: isolate;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.09;
+    mix-blend-mode: screen;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+
+/* Outlined numerals for the journey timeline */
+@utility numeral-outline {
+  color: transparent;
+  -webkit-text-stroke: 1.5px currentColor;
+  -webkit-text-stroke-color: var(--color-ink);
+}
+
+/* ─────────────────────────── Reduced motion ─────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
