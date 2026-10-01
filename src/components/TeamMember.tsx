@@ -19,7 +19,7 @@ export function TeamMember({ member, index, onOpen }: TeamMemberProps) {
   return (
     <article className="group relative flex flex-col items-center text-center">
       {/* Thin gold ring around a circular portrait. */}
-      <div className="w-full max-w-[17rem] rounded-full border border-gold/60 p-1.5 transition-colors duration-500 group-hover:border-gold group-has-[button:focus-visible]:border-gold sm:p-2">
+      <div className="w-full max-w-[14rem] rounded-full sm:max-w-[17rem] border border-gold/60 p-1.5 transition-colors duration-500 group-hover:border-gold group-has-[button:focus-visible]:border-gold sm:p-2">
         <div className="relative aspect-square overflow-hidden rounded-full bg-sand outline-offset-4 group-has-[button:focus-visible]:outline-2 group-has-[button:focus-visible]:outline-solid group-has-[button:focus-visible]:outline-gold-deep">
           {/* Slight base zoom trims the dark edge some source photos have around their circle. */}
           <div className="h-full w-full scale-[1.08] transition-transform duration-[1200ms] ease-calm group-hover:scale-[1.11] group-has-[button:focus-visible]:scale-[1.11]">
@@ -46,7 +46,7 @@ export function TeamMember({ member, index, onOpen }: TeamMemberProps) {
       </h3>
       <p className="mt-1 text-sm text-muted">{event.school}</p>
       {details && <p className="mt-1 text-sm text-ink/80">{details}</p>}
-      {member.bio && <p className="mt-3 line-clamp-2 text-[0.95rem] leading-relaxed text-ink/80">{member.bio}</p>}
+      {member.bio && <p className="mt-3 max-w-[18rem] text-[0.92rem] leading-relaxed text-ink/75">{member.bio}</p>}
       <PersonLinks person={member} kind="student" className="relative z-10 mt-4 justify-center" />
     </article>
   );

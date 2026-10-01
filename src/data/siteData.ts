@@ -102,7 +102,7 @@ export const team: TeamMember[] = [
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
-    bio: "",
+    bio: "Asin came into the week ready to take on a real-world problem with six classmates. Good questions came first, and every conversation along the way was a chance to learn something new.",
     linkedin: "",
   },
   {
@@ -115,7 +115,7 @@ export const team: TeamMember[] = [
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
-    bio: "",
+    bio: "Emma joined the team to represent Southwestern and to see how much a small group can build in a single week. The whiteboard sessions, revisions, and late nights are all part of the story Emma shares with this team.",
     linkedin: "",
   },
   {
@@ -128,7 +128,7 @@ export const team: TeamMember[] = [
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
-    bio: "",
+    bio: "For Alyanna, the Battle of the Brains was about community: representing Southwestern and the people who made the trip possible. Somewhere between the first brainstorm and the final pitch, seven classmates became a team.",
     linkedin: "",
   },
   {
@@ -141,7 +141,7 @@ export const team: TeamMember[] = [
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
-    bio: "",
+    bio: "Elias runs on anything mango, mango juice above all. His passion is fidelity, and only fidelity.",
     linkedin: "",
   },
   {
@@ -154,7 +154,7 @@ export const team: TeamMember[] = [
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
-    bio: "",
+    bio: "Juan Carlos took on the challenge alongside the rest of the seven, trading ideas, testing them, and starting over when something didn't work. The best moments came from figuring things out together.",
     linkedin: "",
   },
   {
@@ -167,7 +167,7 @@ export const team: TeamMember[] = [
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
-    bio: "",
+    bio: "Cody is grateful to have spent this week with these six teammates and three coaches. Representing Southwestern on this stage was a chance to keep learning and to push a little further than expected.",
     linkedin: "",
   },
   {
@@ -180,7 +180,7 @@ export const team: TeamMember[] = [
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
-    bio: "",
+    bio: "Jade saw the competition as a chance to learn quickly, think on the spot, and grow with a group that started as classmates and finished as a team. Each round brought something new to work through together.",
     linkedin: "",
   },
 ];

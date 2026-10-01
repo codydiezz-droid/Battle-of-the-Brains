@@ -23,13 +23,10 @@ export function Team() {
           </p>
         </Reveal>
 
-        {/* Identical cards: four on the first row, three centred beneath on large screens. */}
+        {/* Identical cards: one per row on phones, two on tablets, and on large screens four on the first row with three centred beneath. */}
         <ul className="mt-14 flex flex-wrap justify-center gap-x-4 gap-y-12 sm:gap-x-6 lg:mt-20 lg:gap-x-8 lg:gap-y-16">
           {team.map((member, i) => (
-            <li
-              key={member.name}
-              className="w-full min-[360px]:w-[calc((100%-1rem)/2)] sm:w-[calc((100%-3rem)/3)] lg:w-[calc((100%-6rem)/4)]"
-            >
+            <li key={member.name} className="w-full sm:w-[calc((100%-1.5rem)/2)] lg:w-[calc((100%-6rem)/4)]">
               <Reveal delay={(i % 4) * 0.06}>
                 <TeamMember member={member} index={i} onOpen={() => setOpenIndex(i)} />
               </Reveal>
