@@ -103,7 +103,7 @@ export const team: TeamMember[] = [
     major: "",
     classYear: "",
     bio: "Asin came into the week ready to take on a real-world problem with six classmates. Good questions came first, and every conversation along the way was a chance to learn something new.",
-    linkedin: "",
+    linkedin: "https://www.linkedin.com/in/asin-fathima-allavudeen-a49631303/",
   },
   {
     name: "Emma Sanchez",
@@ -116,7 +116,7 @@ export const team: TeamMember[] = [
     major: "",
     classYear: "",
     bio: "Emma joined the team to represent Southwestern and to see how much a small group can build in a single week. The whiteboard sessions, revisions, and late nights are all part of the story Emma shares with this team.",
-    linkedin: "",
+    linkedin: "https://www.linkedin.com/in/emma-sanchez-618a54404/",
   },
   {
     name: "Alyanna Martinez",
@@ -129,7 +129,7 @@ export const team: TeamMember[] = [
     major: "",
     classYear: "",
     bio: "For Alyanna, the Battle of the Brains was about community: representing Southwestern and the people who made the trip possible. Somewhere between the first brainstorm and the final pitch, seven classmates became a team.",
-    linkedin: "",
+    linkedin: "https://www.linkedin.com/in/alyanna-martinez088/",
   },
   {
     name: "Elias Sarwana",
@@ -143,7 +143,7 @@ export const team: TeamMember[] = [
     classYear: "",
     hometown: "Karachi, Pakistan",
     bio: "Every final boss has an origin story, and Elias's starts in Karachi, Pakistan, with the two people who have known him the longest, put up with him the most, and are the real reason he turned out this good. These days he runs on anything mango, mango juice above all.",
-    linkedin: "",
+    linkedin: "https://www.linkedin.com/in/esarwana/",
     website: "https://codydiezz-droid.github.io/Elias/#origin",
   },
   {
@@ -157,7 +157,7 @@ export const team: TeamMember[] = [
     major: "",
     classYear: "",
     bio: "Juan Carlos took on the challenge alongside the rest of the seven, trading ideas, testing them, and starting over when something didn't work. The best moments came from figuring things out together.",
-    linkedin: "",
+    linkedin: "https://www.linkedin.com/in/jcarlos-martinez/",
   },
   {
     name: "Cody Diez Jennings",
@@ -170,7 +170,7 @@ export const team: TeamMember[] = [
     major: "",
     classYear: "",
     bio: "Cody is grateful to have spent this week with these six teammates and three coaches. Representing Southwestern on this stage was a chance to keep learning and to push a little further than expected.",
-    linkedin: "",
+    linkedin: "https://www.linkedin.com/in/codydiez/",
   },
   {
     name: "Jade Cindy Foka",
@@ -183,7 +183,7 @@ export const team: TeamMember[] = [
     major: "",
     classYear: "",
     bio: "Jade saw the competition as a chance to learn quickly, think on the spot, and grow with a group that started as classmates and finished as a team. Each round brought something new to work through together.",
-    linkedin: "",
+    linkedin: "https://www.linkedin.com/in/foka/",
   },
 ];
 
