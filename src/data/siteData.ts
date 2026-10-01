@@ -141,8 +141,10 @@ export const team: TeamMember[] = [
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
-    bio: "Elias runs on anything mango, mango juice above all. His passion is fidelity, and only fidelity.",
+    hometown: "Karachi, Pakistan",
+    bio: "Every final boss has an origin story, and Elias's starts in Karachi, Pakistan, with the two people who have known him the longest, put up with him the most, and are the real reason he turned out this good. These days he runs on anything mango, mango juice above all.",
     linkedin: "",
+    website: "https://codydiezz-droid.github.io/Elias/#origin",
   },
   {
     name: "Juan Carlos",

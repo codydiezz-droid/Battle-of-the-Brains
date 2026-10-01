@@ -31,6 +31,8 @@ export interface Person {
   objectPosition?: ObjectPosition | ResponsivePosition;
   /** Full LinkedIn URL, e.g. "https://www.linkedin.com/in/your-name/". */
   linkedin?: string;
+  /** Full URL of a personal website, e.g. "https://example.com/". */
+  website?: string;
   bio?: string;
   role?: string;
 }
