@@ -154,7 +154,7 @@ scrape LinkedIn profile pictures.
    | Adrian D. Ramirez | `public/images/coaches/adrian-ramirez.jpg` |
 
 2. That's it: the photo replaces the initials automatically. Portrait-shaped photos (taller than wide) look
-   best; the cards use a 4:5 frame. PNG or JPEG both work, as long as the extension matches the `image` path.
+   best for coaches (4:5 frame); student portraits are circles, so square photos work best. PNG or JPEG both work, as long as the extension matches the `image` path.
 3. If the photo came from a website, add or update its entry in `src/data/imageCredits.ts`
    (see [section 12](#12-image-credits)).
 
@@ -394,12 +394,12 @@ controls the preview picture when the link is shared) and `githubUrl` in `siteDa
 
 | Person | Photo | Status |
 | --- | --- | --- |
-| Asin Fathima Allavudeen | `public/images/team/asin-allavudeen.png` | Provided by the team. Add the file |
-| Emma Sanchez | `public/images/team/emma-sanchez.png` | Provided by the team. Add the file |
-| Alyanna Martinez | `public/images/team/alyanna-martinez.png` | Provided by the team. Add the file |
-| Elias Sarwana | `public/images/team/elias-sarwana.png` | Provided by the team. Add the file |
-| Juan Carlos | `public/images/team/juan-carlos.png` | Provided by the team. Add the file |
-| Cody Diez Jennings | `public/images/team/cody-diez-jennings.png` | Provided by the team. Add the file |
+| Asin Fathima Allavudeen | `public/images/team/asin-allavudeen.png` | Added (provided by the team) |
+| Emma Sanchez | `public/images/team/emma-sanchez.png` | Added (provided by the team) |
+| Alyanna Martinez | `public/images/team/alyanna-martinez.png` | Added (provided by the team) |
+| Elias Sarwana | `public/images/team/elias-sarwana.png` | Added (provided by the team) |
+| Juan Carlos | `public/images/team/juan-carlos.png` | Added (provided by the team) |
+| Cody Diez Jennings | `public/images/team/cody-diez-jennings.png` | Added (provided by the team) |
 | Jade Cindy Foka | `public/images/team/jade-foka.jpg` | Added (provided by the team) |
 | Dr. Debika Sihi | `public/images/coaches/debika-sihi.jpg` ([official profile](https://www.southwestern.edu/live/profiles/25848-debika-sihi)) | To download |
 | Abby Dings | `public/images/coaches/abby-dings.jpg` ([official profile](https://www.southwestern.edu/live/profiles/25780-abby-dings)) | To download |
@@ -407,8 +407,9 @@ controls the preview picture when the link is shared) and `githubUrl` in `siteDa
 | Team photo | `public/images/team/botb-team-2026.jpg` | Added |
 | Competition graphic | `public/images/botb-2026-southwestern.jpg` | Added |
 
-Student cards all use the same 4:5 frame with slightly rounded corners and `object-fit: cover`, so photos with
-different crops and backgrounds still line up. If a face sits off-centre, adjust that student's
+Student portraits are shown as equal circles with a thin gold ring (`object-fit: cover`), so photos with
+different crops and backgrounds still line up. Square photos work best; the team's circle-cropped photos were
+trimmed to the square around their circle, with no other edits. If a face sits off-centre, adjust that student's
 `objectPosition` (see [section 6](#6-change-image-positioning-cropping)). Photos are never filtered or retouched.
 
 ---

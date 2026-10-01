@@ -51,8 +51,8 @@ export function Portrait({
       <div
         aria-hidden="true"
         className={cx(
-          "@container flex h-full w-full items-center justify-center text-cream",
-          tones[tone % tones.length],
+          "@container flex h-full w-full items-center justify-center",
+          soft ? "bg-sand-deep text-ink/85" : ["text-cream", tones[tone % tones.length]].join(" "),
           className,
         )}
       >

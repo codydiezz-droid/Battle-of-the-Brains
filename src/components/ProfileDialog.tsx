@@ -58,8 +58,14 @@ function ProfileContent({ member, tone, prev, next, onPrev, onNext, onClose }: P
 
   return (
     <div className="grid max-h-[calc(100dvh-2rem)] w-[min(60rem,calc(100vw-2rem))] grid-rows-[auto_1fr] overflow-y-auto bg-cream text-ink md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] md:grid-rows-1">
-      <div className="aspect-[4/3] md:aspect-auto md:min-h-[34rem]">
-        <Portrait person={member} tone={tone} eager soft />
+      <div className="flex items-center justify-center bg-sand px-8 py-10 md:min-h-[32rem]">
+        <div className="w-48 rounded-full border border-gold/70 p-2 sm:w-60 md:w-72">
+          <div className="aspect-square overflow-hidden rounded-full">
+            <div className="h-full w-full scale-[1.08]">
+              <Portrait person={member} tone={tone} eager variant="compact" soft />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-col p-6 sm:p-10">

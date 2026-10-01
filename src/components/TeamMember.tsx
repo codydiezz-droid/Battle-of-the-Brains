@@ -1,4 +1,3 @@
-import { ArrowUpRight } from "lucide-react";
 import type { TeamMember as Member } from "../data/types";
 import { event } from "../data/siteData";
 import { PersonLinks } from "./PersonLinks";
@@ -11,37 +10,35 @@ interface TeamMemberProps {
 }
 
 /**
- * One of the seven. Every card is identical in size — no one is ranked.
+ * One of the seven. Every portrait is the same size — no one is ranked.
  * The whole card opens the profile; the name button carries the accessible label.
  */
 export function TeamMember({ member, index, onOpen }: TeamMemberProps) {
   const details = [member.major, member.classYear && formatYear(member.classYear)].filter(Boolean).join(" · ");
 
   return (
-    <article className="group relative rounded-lg outline-offset-[6px] has-[button:focus-visible]:outline-2 has-[button:focus-visible]:outline-gold-deep has-[button:focus-visible]:outline-solid">
-      <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-sand">
-        <div className="h-full w-full transition-transform duration-[1200ms] ease-calm group-hover:scale-[1.03] group-has-[button:focus-visible]:scale-[1.03]">
-          <Portrait person={member} tone={index} soft />
+    <article className="group relative flex flex-col items-center text-center">
+      {/* Thin gold ring around a circular portrait. */}
+      <div className="w-full max-w-[17rem] rounded-full border border-gold/60 p-1.5 transition-colors duration-500 group-hover:border-gold group-has-[button:focus-visible]:border-gold sm:p-2">
+        <div className="relative aspect-square overflow-hidden rounded-full bg-sand outline-offset-4 group-has-[button:focus-visible]:outline-2 group-has-[button:focus-visible]:outline-solid group-has-[button:focus-visible]:outline-gold-deep">
+          {/* Slight base zoom trims the dark edge some source photos have around their circle. */}
+          <div className="h-full w-full scale-[1.08] transition-transform duration-[1200ms] ease-calm group-hover:scale-[1.11] group-has-[button:focus-visible]:scale-[1.11]">
+            <Portrait person={member} tone={index} variant="compact" soft />
+          </div>
         </div>
-        <span
-          aria-hidden="true"
-          className="absolute bottom-3 left-3 inline-flex rounded translate-y-2 items-center gap-1 bg-cream px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-ink opacity-0 transition-all duration-500 ease-calm group-hover:translate-y-0 group-hover:opacity-100 group-has-[button:focus-visible]:translate-y-0 group-has-[button:focus-visible]:opacity-100"
-        >
-          Meet {member.firstName}
-          <ArrowUpRight className="h-3.5 w-3.5" />
-        </span>
       </div>
 
-      <div aria-hidden="true" className="relative mt-4 h-[2px] bg-ink/10">
-        <span className="absolute inset-0 origin-left scale-x-0 bg-gold transition-transform duration-700 ease-calm group-hover:scale-x-100 group-has-[button:focus-visible]:scale-x-100" />
-      </div>
+      <span
+        aria-hidden="true"
+        className="mt-5 block h-[2px] w-10 origin-center scale-x-0 bg-gold transition-transform duration-700 ease-calm group-hover:scale-x-100 group-has-[button:focus-visible]:scale-x-100"
+      />
 
-      <h3 className="mt-4 font-display text-[1.15rem] font-semibold leading-[1.15] tracking-[-0.01em] text-ink/80 transition-colors duration-500 group-hover:text-ink group-has-[button:focus-visible]:text-ink sm:text-[1.3rem]">
+      <h3 className="mt-4 font-display text-[1.1rem] font-semibold leading-[1.2] tracking-[-0.01em] text-balance text-ink/80 transition-colors duration-500 group-hover:text-ink group-has-[button:focus-visible]:text-ink sm:text-[1.25rem]">
         <button
           type="button"
           onClick={onOpen}
           aria-haspopup="dialog"
-          className="text-left after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
+          className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
         >
           {member.name}
           <span className="sr-only">, open profile</span>
@@ -50,7 +47,7 @@ export function TeamMember({ member, index, onOpen }: TeamMemberProps) {
       <p className="mt-1 text-sm text-muted">{event.school}</p>
       {details && <p className="mt-1 text-sm text-ink/80">{details}</p>}
       {member.bio && <p className="mt-3 line-clamp-2 text-[0.95rem] leading-relaxed text-ink/80">{member.bio}</p>}
-      <PersonLinks person={member} kind="student" className="relative z-10 mt-4" />
+      <PersonLinks person={member} kind="student" className="relative z-10 mt-4 justify-center" />
     </article>
   );
 }
