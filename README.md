@@ -329,7 +329,7 @@ The "See what we built" section appears once that file exists. If you also save 
 link downloads the PowerPoint.
 
 **The result and finalist graphic.** The wording of the result section lives in `result`. Save the official
-"Meet your 2026 Finalists" graphic as `public/images/2026-finalists.png` and it appears under the result.
+"Meet your 2026 Finalists" graphic as `public/images/2026-finalists.jpg` and it appears under the result.
 
 **Team + coaches photo.** Save it as `public/images/team/team-and-coaches-2026.jpg`. The "Team behind the pitch"
 section stays hidden until the file exists.

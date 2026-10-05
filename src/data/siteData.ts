@@ -64,7 +64,7 @@ export const competitionGraphic: FeatureImage = {
 
 /** The official "Meet your 2026 Finalists" graphic. Shown in the result section once the file is added. */
 export const finalistsGraphic: FeatureImage = {
-  src: "/images/2026-finalists.png",
+  src: "/images/2026-finalists.jpg",
   alt: "2026 HSI Battle of the Brains finalist schools including Southwestern University",
   caption: "Southwestern University named a 2026 HSI Battle of the Brains finalist.",
 };
