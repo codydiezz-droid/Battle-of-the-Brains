@@ -8,7 +8,7 @@ export function GallerySection() {
     <section id="gallery" data-nav="gallery" aria-labelledby="gallery-heading" className="py-24 sm:py-32 lg:py-40">
       <div className="container-site">
         <Reveal>
-          <SectionLabel index="07" label="Gallery" />
+          <SectionLabel index="11" label="Gallery" />
           <h2 id="gallery-heading" className="display mt-8 text-[clamp(2.6rem,6.4vw,6rem)]">
             Beyond the
             <br />

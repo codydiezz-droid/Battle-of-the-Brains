@@ -7,6 +7,9 @@ export function hasImage(src?: string): src is string {
   return Boolean(src) && availableImages.has(src as string);
 }
 
+/** Same check for other files in /public, such as the presentation deck. */
+export const hasFile = hasImage;
+
 /**
  * Turns "/images/x.jpg" into a URL that works both locally and when the site is
  * served from a GitHub Pages repository subpath.

@@ -1,5 +1,6 @@
 import { LazyMotion, MotionConfig, domAnimation } from "framer-motion";
 import { Navigation } from "./components/Navigation";
+import { Achievement } from "./sections/Achievement";
 import { Closing } from "./sections/Closing";
 import { Coaches } from "./sections/Coaches";
 import { Competition } from "./sections/Competition";
@@ -7,9 +8,12 @@ import { Footer } from "./sections/Footer";
 import { GallerySection } from "./sections/GallerySection";
 import { Hero } from "./sections/Hero";
 import { Journey } from "./sections/Journey";
+import { Numbers } from "./sections/Numbers";
+import { Pitch } from "./sections/Pitch";
 import { Project } from "./sections/Project";
 import { Story } from "./sections/Story";
 import { Team } from "./sections/Team";
+import { TeamBehind } from "./sections/TeamBehind";
 import { TeamPhoto } from "./sections/TeamPhoto";
 import { ThankYou } from "./sections/ThankYou";
 
@@ -31,11 +35,15 @@ export default function App() {
           <TeamPhoto />
           <Story />
           <Competition />
+          <Achievement />
+          <Journey />
           <Team />
+          <TeamBehind />
+          <Project />
+          <Pitch />
+          <Numbers />
           <Coaches />
           <ThankYou />
-          <Journey />
-          <Project />
           <GallerySection />
           <Closing />
         </main>

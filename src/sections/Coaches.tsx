@@ -1,7 +1,7 @@
 import { CoachCard } from "../components/CoachCard";
 import { Reveal } from "../components/Reveal";
 import { SectionLabel } from "../components/SectionLabel";
-import { coaches } from "../data/siteData";
+import { coaches, coachesIntro } from "../data/siteData";
 
 export function Coaches() {
   return (
@@ -14,16 +14,16 @@ export function Coaches() {
       <div className="container-site">
         <div className="grid gap-8 lg:grid-cols-12 lg:items-end">
           <Reveal className="lg:col-span-8">
-            <SectionLabel index="04" label="Coaches" />
+            <SectionLabel index="10" label="Coaches" />
             <h2 id="coaches-heading" className="display mt-8 text-[clamp(2.6rem,6.4vw,6rem)]">
               The people
               <br />
-              who guided us
+              in our corner
             </h2>
           </Reveal>
-          <Reveal className="lg:col-span-4" delay={0.1}>
-            <p className="font-serif text-[1.6rem] leading-snug italic text-ink/80 lg:text-right">
-              Great teams don’t get there alone.
+          <Reveal className="lg:col-span-4 lg:grid" delay={0.1}>
+            <p className="max-w-md text-[1.05rem] leading-[1.75] text-ink/80 sm:text-[1.12rem] lg:justify-self-end">
+              {coachesIntro}
             </p>
           </Reveal>
         </div>

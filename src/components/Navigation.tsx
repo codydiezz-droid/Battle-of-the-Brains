@@ -7,10 +7,10 @@ import { pad } from "../lib/text";
 export const navItems = [
   { id: "home", label: "Home" },
   { id: "story", label: "Story" },
-  { id: "team", label: "Team" },
-  { id: "coaches", label: "Coaches" },
   { id: "journey", label: "Journey" },
-  { id: "project", label: "Project" },
+  { id: "team", label: "Team" },
+  { id: "onebridge", label: "OneBridge" },
+  { id: "coaches", label: "Coaches" },
   { id: "gallery", label: "Gallery" },
 ] as const;
 

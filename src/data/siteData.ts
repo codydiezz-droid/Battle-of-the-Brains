@@ -12,7 +12,7 @@
  *     If a file doesn't exist yet, a placeholder with initials is shown.
  * ─────────────────────────────────────────────────────────────────────────────
  */
-import type { Coach, FeatureImage, GalleryImage, JourneyStep, Project, TeamMember } from "./types";
+import type { Coach, FeatureImage, GalleryImage, JourneyStep, Metric, Presentation, Project, TeamMember } from "./types";
 
 /* ───────────────────────────── Settings ───────────────────────────── */
 
@@ -62,6 +62,21 @@ export const competitionGraphic: FeatureImage = {
   alt: "2026 HSI Battle of the Brains graphic: Southwestern University, 2nd-Year Participant, September 28 – October 2, 2026.",
 };
 
+/** The official "Meet your 2026 Finalists" graphic. Shown in the result section once the file is added. */
+export const finalistsGraphic: FeatureImage = {
+  src: "/images/2026-finalists.jpg",
+  alt: "2026 HSI Battle of the Brains finalist schools including Southwestern University",
+  caption: "Southwestern University named a 2026 HSI Battle of the Brains finalist.",
+};
+
+/** Group photo of the seven students with their coaches. The section is hidden until the file is added. */
+export const teamAndCoachesPhoto: FeatureImage = {
+  src: "/images/team/team-and-coaches-2026.jpg",
+  alt: "Southwestern University Battle of the Brains team with coaches at the 2026 competition",
+  caption: "Southwestern University at the 2026 HSI Battle of the Brains.",
+  objectPosition: { mobile: "50% 40%", desktop: "50% 40%" },
+};
+
 /* ─────────────────────────── Written copy ─────────────────────────── */
 
 export const story = {
@@ -76,11 +91,32 @@ export const competition = {
   note: "We are grateful for the opportunity to continue Southwestern's presence at the competition and contribute our own chapter to that story.",
 };
 
+/**
+ * Only what the team can state with confidence: 1st place for the business
+ * solution, finalist, and presenting in the final round. Southwestern did not
+ * win the overall competition, so never word it that way.
+ */
+export const result = {
+  headline: "1st Place — Business Solution",
+  summary:
+    "Our team earned first place for our business solution and was selected as a finalist to present OneBridge on the final stage.",
+  credentials: ["2026 HSI Battle of the Brains", "Southwestern University", "Finalist", "1st Place — Business Solution"],
+};
+
+export const coachesIntro =
+  "This experience would not have been possible without the mentors who challenged us, encouraged us, and believed in our team throughout the competition.";
+
 export const gratitude = {
-  paragraphs: [
-    "Behind the ideas, revisions, questions, long days, and final presentation were three people who gave us their time and guidance.",
-    "Dr. Debika Sihi, Abby Dings, and Adrian D. Ramirez — thank you for challenging us, supporting us, and giving us the opportunity to represent Southwestern University.",
-    "We are grateful for everything you did to help us get here.",
+  paragraph:
+    "Thank you to our coaches, the HSI Battle of the Brains team, the judges, sponsors, volunteers, and everyone who created an environment where students could build, compete, learn, and connect.",
+  /** People and organizations named in the acknowledgments, in order. */
+  recognize: [
+    "Dr. Debika Sihi",
+    "Dr. Abby Dings",
+    "Adrian D. Ramirez",
+    "Gregory Gibson Jr.",
+    "HSI Battle of the Brains",
+    "Southwestern University",
   ],
 };
 
@@ -115,6 +151,8 @@ export const team: TeamMember[] = [
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
+    location: "United States",
+    flag: "🇺🇸",
     bio: "Emma joined the team to represent Southwestern and to see how much a small group can build in a single week. The whiteboard sessions, revisions, and late nights are all part of the story Emma shares with this team.",
     linkedin: "https://www.linkedin.com/in/emma-sanchez-618a54404/",
   },
@@ -128,6 +166,8 @@ export const team: TeamMember[] = [
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
+    location: "Mexico",
+    flag: "🇲🇽",
     bio: "For Alyanna, the Battle of the Brains was about community: representing Southwestern and the people who made the trip possible. Somewhere between the first brainstorm and the final pitch, seven classmates became a team.",
     linkedin: "https://www.linkedin.com/in/alyanna-martinez088/",
   },
@@ -142,6 +182,8 @@ export const team: TeamMember[] = [
     major: "",
     classYear: "",
     hometown: "Karachi, Pakistan",
+    location: "Pakistan",
+    flag: "🇵🇰",
     bio: "Every final boss has an origin story, and Elias's starts in Karachi, Pakistan, with the two people who have known him the longest, put up with him the most, and are the real reason he turned out this good. These days he runs on anything mango, mango juice above all.",
     linkedin: "https://www.linkedin.com/in/esarwana/",
     website: "https://codydiezz-droid.github.io/Elias/#origin",
@@ -156,6 +198,8 @@ export const team: TeamMember[] = [
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
+    location: "Mexico City, Mexico",
+    flag: "🇲🇽",
     bio: "Juan Carlos took on the challenge alongside the rest of the seven, trading ideas, testing them, and starting over when something didn't work. The best moments came from figuring things out together.",
     linkedin: "https://www.linkedin.com/in/jcarlos-martinez/",
   },
@@ -169,6 +213,8 @@ export const team: TeamMember[] = [
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
+    location: "Madrid, Spain",
+    flag: "🇪🇸",
     bio: "Cody is grateful to have spent this week with these six teammates and three coaches. Representing Southwestern on this stage was a chance to keep learning and to push a little further than expected.",
     linkedin: "https://www.linkedin.com/in/codydiez/",
   },
@@ -182,6 +228,8 @@ export const team: TeamMember[] = [
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
+    location: "Cameroon",
+    flag: "🇨🇲",
     bio: "Jade saw the competition as a chance to learn quickly, think on the spot, and grow with a group that started as classmates and finished as a team. Each round brought something new to work through together.",
     linkedin: "https://www.linkedin.com/in/foka/",
   },
@@ -204,6 +252,7 @@ export const coaches: Coach[] = [
     linkedin: "https://www.linkedin.com/in/debika-sihi-23059b4/",
   },
   {
+    honorific: "Dr.",
     name: "Abby Dings",
     firstName: "Abby",
     initials: "AD",
@@ -232,70 +281,73 @@ export const coaches: Coach[] = [
 
 /* ───────────────────────────── Journey ────────────────────────────── */
 /*
- * Starter descriptions are intentionally general — rewrite them in your own
- * words. Add `image: "/images/journey/<file>.jpg"` to any step to show a photo.
+ * The 24-hour competition in four stages. Keep each line short.
+ * Add `image: "/images/journey/<file>.jpg"` to any step to show a photo.
  */
 
 export const journey: JourneyStep[] = [
   {
-    title: "Team Formed",
-    description: "Seven Southwestern students came together as one team.",
-  },
-  {
     title: "The Challenge",
-    description: "We received the challenge and started working to understand the problem in front of us.",
+    description: "We had 24 hours to build a company and develop an AI-assisted product discovery solution.",
   },
   {
-    title: "Research",
-    description: "Asking questions, reading, and learning as much as we could before deciding anything.",
+    title: "Build",
+    description:
+      "Our team combined business strategy, research, data analysis, design, AI, and financial modeling to create OneBridge.",
   },
   {
-    title: "Brainstorming",
-    description: "Sharing ideas, sketching possibilities, and choosing a direction together.",
+    title: "Finalists",
+    description: "Southwestern University was selected as one of the 2026 HSI Battle of the Brains finalists.",
   },
   {
-    title: "Building",
-    description: "Turning an idea into something real, one revision at a time.",
-  },
-  {
-    title: "Testing",
-    description: "Checking our assumptions and improving what didn't work.",
-  },
-  {
-    title: "Pitch Practice",
-    description: "Rehearsing, listening to feedback, and rehearsing again.",
-  },
-  {
-    title: "Battle of the Brains",
-    date: "Sept. 28 – Oct. 2, 2026",
-    description: "Representing Southwestern University at the 2026 HSI Battle of the Brains.",
-  },
-  {
-    title: "Final Presentation",
-    description: "Sharing our work — together.",
+    title: "The Stage",
+    description: "We advanced to the final round and presented OneBridge to the judges.",
   },
 ];
 
-/* ───────────────────────────── Project ────────────────────────────── */
+/* ───────────────────────────── OneBridge ──────────────────────────── */
 /*
- * Fill in only what you're ready to share. Empty fields are hidden.
- * While everything is empty, the section shows `projectEmptyMessage`.
+ * What we built. Only describe what is in the presentation — no invented
+ * numbers, customers or technical claims.
  */
 
 export const project: Project = {
-  projectName: "",
-  challenge: "",
-  problem: "",
-  targetUser: "",
-  idea: "",
-  solution: "",
-  technology: "",
-  testing: "",
-  impact: "",
-  lessons: "",
+  label: "Built during the 2026 HSI Battle of the Brains",
+  name: "OneBridge",
+  tagline: "The Trusted Connection",
+  intro:
+    "During the 24-hour challenge, our team created OneBridge — a concept designed to help small businesses become more accurately represented and discoverable in AI-assisted search.",
+  steps: [
+    { title: "Connect", description: "Bring together the business’s existing information." },
+    { title: "Verify", description: "Organize and verify accurate business and product data." },
+    { title: "Discover", description: "Help AI systems access better information when customers search." },
+  ],
 };
 
-export const projectEmptyMessage = "We'll share more about what we built here after the competition.";
+/**
+ * The final pitch deck. Put the files in public/presentation/. The section
+ * stays hidden until the .pptx exists; the PDF button appears only if a PDF does.
+ */
+export const presentation: Presentation = {
+  pptx: "/presentation/SU-OneBridge-Final-Pitch.pptx",
+  pdf: "/presentation/SU-OneBridge-Final-Pitch.pdf",
+  logo: "",
+  preview: "/images/onebridge/dashboard-mockup.png",
+  previewAlt: "OneBridge dashboard mockup from our final presentation, shown on a laptop with sample data.",
+  fileNote: "PowerPoint · 34 MB",
+  summary:
+    "The OneBridge deck we presented to the judges in the final round. This page tells the short version; the presentation has the full story.",
+};
+
+/* ─────────────────────────── By the numbers ───────────────────────── */
+
+export const metrics: Metric[] = [
+  { value: 24, label: "Hours to build" },
+  { value: team.length, label: "Students" },
+  { value: 1, label: "Business solution" },
+  { value: "Finalist", label: "2026 competition" },
+  { value: 1, suffix: "st", label: "Business Solution" },
+];
 
 /* ───────────────────────────── Gallery ────────────────────────────── */
 /*

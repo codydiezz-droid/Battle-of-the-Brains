@@ -1,22 +1,18 @@
 import { useInView, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { pad } from "../lib/text";
+import type { Metric } from "../data/types";
 
-interface StatProps {
-  value: number;
-  label: string;
-}
-
-/** A large number that counts up once when it scrolls into view. */
-export function Stat({ value, label }: StatProps) {
+/** A large figure that counts up once when it scrolls into view. Text values (e.g. "Finalist") are shown as is. */
+export function Stat({ value, suffix = "", label }: Metric) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.6 });
   const reduceMotion = useReducedMotion();
-  const isStatic = import.meta.env.VITE_STATIC_REVEAL === "1";
+  const isNumber = typeof value === "number";
+  const isStatic = import.meta.env.VITE_STATIC_REVEAL === "1" || !isNumber;
   const [shown, setShown] = useState(isStatic ? value : 0);
 
   useEffect(() => {
-    if (!inView || isStatic) return;
+    if (!inView || isStatic || !isNumber) return;
     if (reduceMotion) {
       setShown(value);
       return;
@@ -30,14 +26,27 @@ export function Stat({ value, label }: StatProps) {
       if (t < 1) frame = requestAnimationFrame(tick);
     });
     return () => cancelAnimationFrame(frame);
-  }, [inView, isStatic, reduceMotion, value]);
+  }, [inView, isNumber, isStatic, reduceMotion, value]);
 
   return (
-    <div ref={ref} className="flex flex-col-reverse gap-3 border-t border-ink pt-5 sm:pt-6">
-      <dt className="eyebrow text-muted">{label}</dt>
-      <dd className="display text-[clamp(3.25rem,11vw,9rem)] leading-[0.82] tabular-nums">
-        <span aria-hidden="true">{pad(shown)}</span>
-        <span className="sr-only">{value}</span>
+    <div ref={ref} className="flex flex-col-reverse gap-3 border-t border-cream/25 pt-5 sm:pt-6">
+      <dt className="eyebrow text-muted-dark">{label}</dt>
+      <dd
+        className={
+          // Same height for numbers and words, so every figure sits on one baseline.
+          isNumber
+            ? "display flex h-[calc(clamp(3rem,8vw,5.25rem)*0.85)] items-end text-[clamp(3rem,8vw,5.25rem)] leading-[0.85] tabular-nums"
+            : "display flex h-[calc(clamp(3rem,8vw,5.25rem)*0.85)] items-end text-[clamp(2rem,6vw,3.6rem)] leading-[0.85] text-gold"
+        }
+      >
+        <span aria-hidden="true">
+          {shown}
+          {suffix && <span className="text-gold normal-case">{suffix}</span>}
+        </span>
+        <span className="sr-only">
+          {value}
+          {suffix}
+        </span>
       </dd>
     </div>
   );

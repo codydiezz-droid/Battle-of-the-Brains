@@ -43,6 +43,10 @@ export interface TeamMember extends Person {
   /** e.g. "2027" or "Class of 2027" */
   classYear?: string;
   hometown?: string;
+  /** Shown under the name on the team card, e.g. "Mexico City, Mexico". Only what the person shared — no guessed cities. */
+  location?: string;
+  /** Flag emoji shown after the location, e.g. "🇲🇽". */
+  flag?: string;
   /** A short line in the student's own words. */
   personalQuote?: string;
 }
@@ -88,23 +92,49 @@ export interface GalleryImage {
   caption?: string;
 }
 
+export interface OneBridgeStep {
+  title: string;
+  description: string;
+}
+
 export interface Project {
-  projectName?: string;
-  challenge?: string;
-  problem?: string;
-  targetUser?: string;
-  idea?: string;
-  solution?: string;
-  /** A sentence, or a list such as ["React", "Python", "Figma"]. */
-  technology?: string | string[];
-  testing?: string;
-  impact?: string;
-  lessons?: string;
+  /** Small label above the section, e.g. "Built during the 2026 HSI Battle of the Brains". */
+  label: string;
+  name: string;
+  tagline: string;
+  intro: string;
+  steps: OneBridgeStep[];
+}
+
+export interface Presentation {
+  /** Path to the original deck inside /public, e.g. "/presentation/SU-OneBridge-Final-Pitch.pptx". */
+  pptx: string;
+  /** Optional PDF copy for viewing in the browser. Shown only when the file exists. */
+  pdf?: string;
+  /** Optional OneBridge logo taken from the deck. */
+  logo?: string;
+  logoAlt?: string;
+  /** Optional image from the deck shown beside the buttons. */
+  preview?: string;
+  previewAlt?: string;
+  /** Small note under the buttons, e.g. "PowerPoint · 34 MB". */
+  fileNote?: string;
+  summary: string;
+}
+
+export interface Metric {
+  /** A number counts up when it scrolls into view; text is shown as is. */
+  value: number | string;
+  /** Text after a number, e.g. "st" in "1st". */
+  suffix?: string;
+  label: string;
 }
 
 export interface FeatureImage {
   src: string;
   alt: string;
+  /** Optional caption shown under the image. */
+  caption?: string;
   /**
    * Optional crop, e.g. { mobile: "4 / 3" }. Leave out to show the whole
    * photo at its natural shape (nobody gets cropped out).
