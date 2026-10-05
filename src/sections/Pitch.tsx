@@ -48,6 +48,13 @@ export function Pitch() {
                 <Download className="h-4 w-4" aria-hidden="true" />
               </a>
             )}
+            {project.website && (
+              <a href={project.website} target="_blank" rel="noopener noreferrer" className={secondary}>
+                Visit OneBridge
+                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                <span className="sr-only">(opens in a new tab)</span>
+              </a>
+            )}
           </div>
           {presentation.fileNote && (
             <p className="mt-5 text-sm text-muted">

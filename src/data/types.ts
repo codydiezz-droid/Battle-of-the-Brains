@@ -102,6 +102,8 @@ export interface Project {
   label: string;
   name: string;
   tagline: string;
+  /** Optional link to the OneBridge concept site. */
+  website?: string;
   intro: string;
   steps: OneBridgeStep[];
 }

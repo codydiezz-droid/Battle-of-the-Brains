@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { Reveal } from "../components/Reveal";
 import { SectionLabel } from "../components/SectionLabel";
 import { project } from "../data/siteData";
@@ -33,6 +33,21 @@ export function Project() {
           </Reveal>
           <Reveal className="lg:col-span-5 lg:col-start-8" delay={0.1}>
             <p className="text-[1.08rem] leading-[1.75] text-ink/80 sm:text-[1.15rem]">{project.intro}</p>
+            {project.website && (
+              <a
+                href={project.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group mt-7 inline-flex items-center gap-3 border-b-2 border-bridge-blue py-2 text-[0.75rem] font-semibold uppercase tracking-[0.16em] text-bridge-blue transition-colors hover:border-bridge-orange"
+              >
+                Visit the OneBridge site
+                <ArrowUpRight
+                  className="h-4 w-4 transition-transform duration-500 ease-calm group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                  aria-hidden="true"
+                />
+                <span className="sr-only">(opens in a new tab)</span>
+              </a>
+            )}
           </Reveal>
         </div>
 
