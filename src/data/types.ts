@@ -114,6 +114,11 @@ export interface Presentation {
   /** Optional OneBridge logo taken from the deck. */
   logo?: string;
   logoAlt?: string;
+  /** Optional image from the deck shown beside the buttons. */
+  preview?: string;
+  previewAlt?: string;
+  /** Small note under the buttons, e.g. "PowerPoint · 34 MB". */
+  fileNote?: string;
   summary: string;
 }
 

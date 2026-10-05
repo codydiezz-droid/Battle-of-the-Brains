@@ -332,6 +332,9 @@ export const presentation: Presentation = {
   pptx: "/presentation/SU-OneBridge-Final-Pitch.pptx",
   pdf: "/presentation/SU-OneBridge-Final-Pitch.pdf",
   logo: "",
+  preview: "/images/onebridge/dashboard-mockup.png",
+  previewAlt: "OneBridge dashboard mockup from our final presentation, shown on a laptop with sample data.",
+  fileNote: "PowerPoint · 34 MB",
   summary:
     "The OneBridge deck we presented to the judges in the final round. This page tells the short version; the presentation has the full story.",
 };

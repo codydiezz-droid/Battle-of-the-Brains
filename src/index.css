@@ -21,9 +21,9 @@
   --color-green: #1f4a3a;
   --color-muted: #5e5850;
   --color-muted-dark: #a8a296;
-  /* OneBridge presentation accents — use sparingly, only in the OneBridge section. */
-  --color-bridge-blue: #1d4f91;
-  --color-bridge-orange: #e2702a;
+  /* OneBridge presentation accents (taken from the deck) — use sparingly, only in the OneBridge section. */
+  --color-bridge-blue: #045cba;
+  --color-bridge-orange: #f56e1e;
 
   --font-display: "Bricolage Grotesque Variable", "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
   --font-sans: "Instrument Sans Variable", "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
