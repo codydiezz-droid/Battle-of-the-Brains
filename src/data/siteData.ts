@@ -138,6 +138,8 @@ export const team: TeamMember[] = [
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
+    location: "India",
+    flag: "🇮🇳",
     bio: "Asin came into the week ready to take on a real-world problem with six classmates. Good questions came first, and every conversation along the way was a chance to learn something new.",
     linkedin: "https://www.linkedin.com/in/asin-fathima-allavudeen-a49631303/",
   },
@@ -184,9 +186,8 @@ export const team: TeamMember[] = [
     hometown: "Karachi, Pakistan",
     location: "Pakistan",
     flag: "🇵🇰",
-    bio: "Every final boss has an origin story, and Elias's starts in Karachi, Pakistan, with the two people who have known him the longest, put up with him the most, and are the real reason he turned out this good. These days he runs on anything mango, mango juice above all.",
+    bio: "Originally from Karachi, Pakistan, Elias joined the team to represent Southwestern and take on a real-world business challenge in 24 hours. He worked alongside six classmates to research, build, and present OneBridge in the final round.",
     linkedin: "https://www.linkedin.com/in/esarwana/",
-    website: "https://codydiezz-droid.github.io/Elias/#origin",
   },
   {
     name: "Juan Carlos",
@@ -315,6 +316,7 @@ export const project: Project = {
   label: "Built during the 2026 HSI Battle of the Brains",
   name: "OneBridge",
   tagline: "The Trusted Connection",
+  website: "https://onebridge-botb-2026.vercel.app/",
   intro:
     "During the 24-hour challenge, our team created OneBridge — a concept designed to help small businesses become more accurately represented and discoverable in AI-assisted search.",
   steps: [
