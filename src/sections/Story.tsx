@@ -1,7 +1,6 @@
 import { Reveal } from "../components/Reveal";
 import { SectionLabel } from "../components/SectionLabel";
-import { Stat } from "../components/Stat";
-import { coaches, event, story, team } from "../data/siteData";
+import { story } from "../data/siteData";
 
 export function Story() {
   const [lede, ...rest] = story.paragraphs;
@@ -37,11 +36,6 @@ export function Story() {
           </Reveal>
         </div>
 
-        <dl className="mt-20 grid grid-cols-3 gap-4 sm:mt-28 sm:gap-8 lg:gap-12">
-          <Stat value={team.length} label="Students" />
-          <Stat value={coaches.length} label="Coaches" />
-          <Stat value={event.yearsParticipating} label="Years at BOTB" />
-        </dl>
       </div>
     </section>
   );

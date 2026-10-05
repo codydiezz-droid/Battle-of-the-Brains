@@ -1,84 +1,64 @@
+import { ArrowRight } from "lucide-react";
 import { Reveal } from "../components/Reveal";
 import { SectionLabel } from "../components/SectionLabel";
-import { project, projectEmptyMessage } from "../data/siteData";
-import type { Project as ProjectData } from "../data/types";
+import { project } from "../data/siteData";
+import { pad } from "../lib/text";
 
-/** Labels for each project field, in the order they appear. */
-const fields: Array<[keyof ProjectData, string]> = [
-  ["problem", "The problem"],
-  ["targetUser", "Who it's for"],
-  ["idea", "The idea"],
-  ["solution", "Our solution"],
-  ["technology", "Technology"],
-  ["testing", "Testing"],
-  ["impact", "Impact"],
-  ["lessons", "What we learned"],
-];
-
-const filled = (v: ProjectData[keyof ProjectData]) =>
-  Array.isArray(v) ? v.some((item) => item.trim()) : Boolean(v?.trim());
-
+/** OneBridge, the concept we built. Blue and orange nod to the presentation without taking over the page. */
 export function Project() {
-  const rows = fields.filter(([key]) => filled(project[key]));
-  const isEmpty = !project.projectName?.trim() && !project.challenge?.trim() && rows.length === 0;
-
   return (
     <section
-      id="project"
-      data-nav="project"
-      aria-labelledby="project-heading"
+      id="onebridge"
+      data-nav="onebridge"
+      aria-labelledby="onebridge-heading"
       className="bg-paper py-24 sm:py-32 lg:py-40"
     >
       <div className="container-site">
         <Reveal>
-          <SectionLabel index="06" label="Project" />
-          <h2 id="project-heading" className="display mt-8 max-w-5xl text-[clamp(2.6rem,6.4vw,6rem)]">
-            What we built together
-          </h2>
+          <SectionLabel index="07" label="What we built" />
+          <p className="mt-8 inline-flex items-center gap-2 rounded-lg border border-bridge-blue/25 sm:rounded-full px-3 py-1 text-[0.72rem] font-semibold tracking-[0.08em] text-bridge-blue uppercase">
+            <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-bridge-orange" />
+            {project.label}
+          </p>
         </Reveal>
 
-        {isEmpty ? (
-          <Reveal className="mt-12 border-t border-ink/15 pt-8 lg:mt-16" delay={0.1}>
-            <p className="max-w-xl font-serif text-[1.6rem] leading-snug italic text-ink/80">{projectEmptyMessage}</p>
+        <div className="mt-8 grid gap-10 lg:grid-cols-12 lg:items-end lg:gap-8">
+          <Reveal className="lg:col-span-6">
+            <h2 id="onebridge-heading" className="display text-[clamp(3.4rem,10vw,9rem)]">
+              {project.name}
+            </h2>
+            <p className="mt-4 font-serif text-[clamp(1.6rem,2.6vw,2.2rem)] leading-snug italic text-bridge-blue">
+              {project.tagline}
+            </p>
           </Reveal>
-        ) : (
-          <div className="mt-14 lg:mt-20">
-            {(project.projectName?.trim() || project.challenge?.trim()) && (
-              <Reveal className="grid gap-6 border-t border-ink pt-8 lg:grid-cols-12 lg:gap-8">
-                {project.projectName?.trim() && (
-                  <p className="display text-[clamp(2rem,4vw,3.4rem)] lg:col-span-5">{project.projectName}</p>
-                )}
-                {project.challenge?.trim() && (
-                  <div className="lg:col-span-6 lg:col-start-7">
-                    <p className="eyebrow text-muted">The challenge</p>
-                    <p className="mt-3 font-display text-[clamp(1.3rem,2vw,1.7rem)] leading-[1.3] font-medium tracking-[-0.01em]">
-                      {project.challenge}
-                    </p>
-                  </div>
-                )}
-              </Reveal>
-            )}
+          <Reveal className="lg:col-span-5 lg:col-start-8" delay={0.1}>
+            <p className="text-[1.08rem] leading-[1.75] text-ink/80 sm:text-[1.15rem]">{project.intro}</p>
+          </Reveal>
+        </div>
 
-            {rows.length > 0 && (
-              <dl className="mt-12 lg:mt-16">
-                {rows.map(([key, label]) => {
-                  const value = project[key];
-                  return (
-                    <Reveal
-                      key={key}
-                      className="grid gap-3 border-t border-ink/15 py-7 lg:grid-cols-12 lg:gap-8 lg:py-9"
-                    >
-                      <dt className="eyebrow pt-1 text-muted lg:col-span-4">{label}</dt>
-                      <dd className="text-[1.05rem] leading-[1.75] text-ink/85 sm:text-[1.12rem] lg:col-span-7 lg:col-start-6">
-                        {Array.isArray(value) ? value.filter((v) => v.trim()).join(" · ") : value}
-                      </dd>
-                    </Reveal>
-                  );
-                })}
-              </dl>
-            )}
-          </div>
-        )}
+        <ol className="mt-16 grid gap-4 sm:gap-6 lg:mt-24 lg:grid-cols-3 lg:gap-0">
+          {project.steps.map((step, i) => (
+            <li key={step.title} className="relative">
+              <Reveal
+                delay={i * 0.1}
+                className="h-full border border-ink/12 bg-cream/50 p-7 sm:p-9 lg:not-first:border-l-0"
+              >
+                <span aria-hidden="true" className="block h-[3px] w-10 bg-bridge-blue" />
+                <p className="eyebrow mt-6 tabular-nums text-bridge-blue">{pad(i + 1)}</p>
+                <h3 className="display mt-3 text-[clamp(2rem,3.4vw,2.9rem)]">{step.title}</h3>
+                <p className="mt-4 max-w-xs text-[1.02rem] leading-relaxed text-ink/75">{step.description}</p>
+              </Reveal>
+              {i < project.steps.length - 1 && (
+                <span
+                  aria-hidden="true"
+                  className="absolute top-1/2 -right-[18px] z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-ink/12 bg-paper text-bridge-orange lg:flex"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </span>
+              )}
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   );

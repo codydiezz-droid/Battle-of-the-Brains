@@ -302,13 +302,12 @@ Please only post photos of people who are comfortable being on the site.
 
 ## 10. Edit the journey timeline
 
-The nine steps are in the `journey` list in `siteData.ts`. The starter descriptions are deliberately general.
-Rewrite them in your own words.
+The four stages of the 24-hour competition are in the `journey` list in `siteData.ts`. Keep each line short.
 
 ```ts
 {
-  title: "Brainstorming",
-  description: "Sharing ideas, sketching possibilities, and choosing a direction together.",
+  title: "Build",
+  description: "Our team combined business strategy, research, data analysis, design, AI, and financial modeling to create OneBridge.",
   date: "",                                         // optional small label
   image: "/images/journey/brainstorming.jpg",       // optional photo
   imageAlt: "The team around a table covered in sticky notes.",
@@ -321,25 +320,22 @@ Steps without an `image` stay purely typographic, so there are no empty boxes.
 
 ## 11. Update the project section
 
-Fill in the `project` object in `siteData.ts` when you're ready to share it:
+The OneBridge section reads the `project` object in `siteData.ts` (name, tagline, intro and the three steps:
+Connect, Verify, Discover). Only describe what is in the presentation: no invented numbers or claims.
 
-```ts
-export const project: Project = {
-  projectName: "",
-  challenge: "",
-  problem: "",
-  targetUser: "",
-  idea: "",
-  solution: "",
-  technology: "",          // a sentence, or a list: ["React", "Python", "Figma"]
-  testing: "",
-  impact: "",
-  lessons: "",
-};
-```
+**The final pitch deck.** Save the original PowerPoint as `public/presentation/SU-OneBridge-Final-Pitch.pptx`.
+The "See what we built" section appears once that file exists. If you also save a PDF copy as
+`public/presentation/SU-OneBridge-Final-Pitch.pdf`, the main button opens the PDF in the browser and a second
+link downloads the PowerPoint.
 
-Empty fields are hidden. While **everything** is empty, the section shows `projectEmptyMessage` ("We'll share
-more about what we built here after the competition.") instead, so nothing is revealed before you're ready.
+**The result and finalist graphic.** The wording of the result section lives in `result`. Save the official
+"Meet your 2026 Finalists" graphic as `public/images/2026-finalists.png` and it appears under the result.
+
+**Team + coaches photo.** Save it as `public/images/team/team-and-coaches-2026.jpg`. The "Team behind the pitch"
+section stays hidden until the file exists.
+
+**By the numbers.** Edit the `metrics` list. Numbers count up as they scroll into view; words such as
+"Finalist" are shown as they are.
 
 ---
 

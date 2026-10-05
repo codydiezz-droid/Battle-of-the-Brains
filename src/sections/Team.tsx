@@ -13,7 +13,7 @@ export function Team() {
       <div className="container-site">
         <Reveal className="grid gap-6 lg:grid-cols-12 lg:items-end">
           <div className="lg:col-span-7">
-            <SectionLabel index="03" label="Team" />
+            <SectionLabel index="05" label="Team" />
             <h2 id="team-heading" className="display mt-8 text-[clamp(3.2rem,8vw,7rem)]">
               The Seven
             </h2>

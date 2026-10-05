@@ -1,3 +1,4 @@
+import { MapPin } from "lucide-react";
 import type { TeamMember as Member } from "../data/types";
 import { event } from "../data/siteData";
 import { PersonLinks } from "./PersonLinks";
@@ -44,6 +45,20 @@ export function TeamMember({ member, index, onOpen }: TeamMemberProps) {
           <span className="sr-only">, open profile</span>
         </button>
       </h3>
+      {member.location && (
+        <p className="mt-1.5 inline-flex items-center gap-1.5 text-[0.82rem] leading-snug text-muted">
+          <MapPin className="h-3.5 w-3.5 shrink-0 text-gold-deep" aria-hidden="true" />
+          <span>
+            <span className="sr-only">From </span>
+            {member.location}
+          </span>
+          {member.flag && (
+            <span aria-hidden="true" className="text-[0.95rem] leading-none">
+              {member.flag}
+            </span>
+          )}
+        </p>
+      )}
       <p className="mt-1 text-sm text-muted">{event.school}</p>
       {details && <p className="mt-1 text-sm text-ink/80">{details}</p>}
       {member.bio && <p className="mt-3 max-w-[18rem] text-[0.92rem] leading-relaxed text-ink/75">{member.bio}</p>}

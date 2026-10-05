@@ -8,10 +8,20 @@ import { defineConfig, type Plugin } from "vite";
 const root = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(root, "public");
 const imagesDir = path.join(publicDir, "images");
+const presentationDir = path.join(publicDir, "presentation");
 const IMAGE_FILE = /\.(jpe?g|png|webp|avif|gif|svg)$/i;
+const DOCUMENT_FILE = /\.(pdf|pptx)$/i;
 
-/** Every image inside public/images, as site paths like "/images/team/emma-sanchez.jpg". */
-function listPublicImages(dir = imagesDir): string[] {
+/**
+ * Every image inside public/images and every deck inside public/presentation,
+ * as site paths like "/images/team/emma-sanchez.jpg".
+ */
+function listPublicFiles(): string[] {
+  return [...listPublicImages(), ...listPublicImages(presentationDir, DOCUMENT_FILE)];
+}
+
+/** Every matching file inside a folder of public/, as site paths. */
+function listPublicImages(dir = imagesDir, pattern = IMAGE_FILE): string[] {
   let entries: string[];
   try {
     entries = readdirSync(dir);
@@ -20,15 +30,15 @@ function listPublicImages(dir = imagesDir): string[] {
   }
   return entries.flatMap((name) => {
     const full = path.join(dir, name);
-    if (statSync(full).isDirectory()) return listPublicImages(full);
-    if (!IMAGE_FILE.test(name)) return [];
+    if (statSync(full).isDirectory()) return listPublicImages(full, pattern);
+    if (!pattern.test(name)) return [];
     return ["/" + path.relative(publicDir, full).split(path.sep).join("/")];
   });
 }
 
 /**
- * Exposes `virtual:public-images` — the set of images that actually exist in
- * public/images. Components use it to show a photo when the file is present and
+ * Exposes `virtual:public-images` — the set of images (and presentation files)
+ * that actually exist in public/. Components use it to show a photo when the file is present and
  * an initials placeholder when it isn't, so the site never renders a broken image.
  * It also prints a short report of which photos referenced in src/data are missing.
  */
@@ -65,7 +75,7 @@ function publicImages(): Plugin {
     },
     load(id) {
       if (id === resolvedId) {
-        return `export default new Set(${JSON.stringify(listPublicImages())});`;
+        return `export default new Set(${JSON.stringify(listPublicFiles())});`;
       }
     },
     buildStart() {
@@ -73,7 +83,7 @@ function publicImages(): Plugin {
     },
     configureServer(server) {
       const refresh = (file: string) => {
-        if (!file.startsWith(imagesDir)) return;
+        if (!file.startsWith(imagesDir) && !file.startsWith(presentationDir)) return;
         const mod = server.moduleGraph.getModuleById(resolvedId);
         if (mod) server.moduleGraph.invalidateModule(mod);
         server.ws.send({ type: "full-reload" });
