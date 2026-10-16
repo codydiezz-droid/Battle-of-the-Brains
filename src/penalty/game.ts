@@ -598,9 +598,18 @@ export class Engine {
       }
       this.update(dt * this.timeScale, dt);
     }
-    this.render();
+    // Behind menus and the lobby the scene is only scenery: draw it gently,
+    // leaving the device free for the interface and the online connection
+    if (!this.background || now - this.lastDraw > 0.1 || this.phase === "celebrate") {
+      this.lastDraw = now;
+      this.render();
+    }
     requestAnimationFrame(() => this.loop());
   }
+
+  /** True while a menu covers the pitch: the scene redraws at about 10 frames a second. */
+  background = false;
+  private lastDraw = 0;
 
   private update(dt: number, realDt: number) {
     if (this.phase === "replay") return this.updateReplay(realDt);

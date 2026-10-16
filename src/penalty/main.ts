@@ -28,6 +28,8 @@ const screens = ["menu", "select", "hud", "paused", "end", "online", "lobby", "t
 type Screen = (typeof screens)[number];
 function show(...visible: Screen[]) {
   for (const s of screens) $(`#${s}`).hidden = !visible.includes(s);
+  // Full-speed 3D only when the match (or a celebration) is on screen
+  engine.background = !visible.includes("hud");
   const top = visible[visible.length - 1];
   $(`#${top}`).querySelector<HTMLElement>("[data-autofocus]")?.focus();
 }
