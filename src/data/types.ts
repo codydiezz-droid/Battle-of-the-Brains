@@ -62,6 +62,8 @@ export interface Photo {
   /** What is happening, for people using screen readers. */
   alt: string;
   caption: string;
+  /** Shown full width at the top of the photo wall. */
+  featured?: boolean;
 }
 
 export interface WeekStep {

@@ -31,7 +31,7 @@ export function Gallery({ photos }: { photos: Photo[] }) {
     <>
       <ul className="gallery">
         {photos.map((photo, i) => (
-          <li key={photo.src}>
+          <li key={photo.src} className={photo.featured ? "is-featured" : undefined}>
             <button
               type="button"
               className="gallery-item"
@@ -43,7 +43,7 @@ export function Gallery({ photos }: { photos: Photo[] }) {
               <img
                 src={photoSmall(photo)}
                 srcSet={photoSrcSet(photo)}
-                sizes="(min-width: 1100px) 340px, (min-width: 640px) 45vw, 92vw"
+                sizes={photo.featured ? "(min-width: 1180px) 1180px, 100vw" : "(min-width: 1100px) 340px, (min-width: 640px) 45vw, 92vw"}
                 width={photo.width}
                 height={photo.height}
                 alt={photo.alt}

@@ -1036,6 +1036,17 @@ section[id] {
   break-inside: avoid;
   margin-bottom: 24px;
 }
+/* The whole-team photo spans every column above the rest. */
+.gallery li.is-featured {
+  column-span: all;
+  margin-bottom: 40px;
+}
+.gallery li.is-featured img {
+  border-radius: 18px;
+}
+.gallery li.is-featured .gallery-caption {
+  font-size: 15px;
+}
 .gallery-item {
   display: block;
   width: 100%;

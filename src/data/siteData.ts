@@ -338,6 +338,16 @@ export const photos = {
     "Students in yellow event shirts on stage in front of the Battle of the Brains backdrop, with an audience in the foreground.",
     "The eBay scholarship semifinalists on stage, including Cody Diez Jennings.",
   ),
+  fullTeam: {
+    ...p(
+      "full-team",
+      1600,
+      794,
+      "All seven students and the three coaches standing together in business attire on a stone terrace, with trees behind them.",
+      "All seven of us with Dr. Debika Sihi, Dr. Abby Dings, and Adrian D. Ramirez. Edited to bring the whole team into one photo.",
+    ),
+    featured: true,
+  },
   silly: p(
     "silly",
     1440,
@@ -382,6 +392,7 @@ export const week: WeekStep[] = [
 
 /** Every photo in the gallery at the end of the page, in this order. */
 export const gallery: Photo[] = [
+  photos.fullTeam,
   photos.allDone,
   photos.presenting,
   photos.welcome,
