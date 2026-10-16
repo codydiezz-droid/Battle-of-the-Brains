@@ -346,7 +346,15 @@ function nextRole(): Role {
   return match.you.length <= match.cpu.length ? "shoot" : "keep";
 }
 
+/** Clear the result banner (and a celebration shout left by a restart). */
+function clearBanner() {
+  const b = $("#banner");
+  b.hidden = true;
+  b.classList.remove("celebrate-shout");
+}
+
 function nextKick() {
+  clearBanner();
   const role = nextRole();
   if (role === "shoot") engine.setCast(match.myShooter, match.cpuKeeper);
   else engine.setCast(match.cpuShooter, match.myKeeper);
@@ -448,19 +456,27 @@ function dots(results: boolean[], slots: number) {
   return out.join("");
 }
 
+/** The duel's state from the player's side: still to play for, won, or out of reach. */
+function duelNote(scored: number, taken: number, striking: boolean) {
+  const stops = taken - scored;
+  if (scored >= STRIKER_NEEDS) return striking ? "you’ve won it" : "the striker has won it";
+  if (stops >= 5 - STRIKER_NEEDS + 1) return striking ? "the keeper has won it" : "you’ve won it";
+  return striking ? `score ${STRIKER_NEEDS - scored} more to win` : `stop ${5 - STRIKER_NEEDS + 1 - stops} more to win`;
+}
+
 function updateBoard() {
   const m = match;
   const sudden = m.mode === "shootout" && m.you.length >= 5 && m.cpu.length >= 5;
   if (m.mode === "challenge" || (m.mode === "practice" && m.practiceRole === "shoot")) {
     $("#dots-you").innerHTML = dots(m.mode === "practice" ? m.you.slice(-5) : m.you, 5);
     $("#score").textContent = m.mode === "practice" ? `${goals(m.you)} / ${m.you.length}` : `${goals(m.you)} / 5`;
-    $("#status").textContent = m.mode === "practice" ? "Practice · shooting" : `Penalty ${Math.min(m.you.length + 1, 5)} of 5 · score 4 to win`;
+    $("#status").textContent = m.mode === "practice" ? "Practice · shooting" : `Penalty ${Math.min(m.you.length + 1, 5)} of 5 · ${duelNote(goals(m.you), m.you.length, true)}`;
   } else if (m.mode === "keeper" || (m.mode === "practice" && m.practiceRole === "keep")) {
     // For a keeper, green is a stop
     const saves = m.cpu.map((g) => !g);
     $("#dots-you").innerHTML = dots(m.mode === "practice" ? saves.slice(-5) : saves, 5);
     $("#score").textContent = m.mode === "practice" ? `${goals(saves)} / ${saves.length} saved` : `${goals(saves)} saved`;
-    $("#status").textContent = m.mode === "practice" ? "Practice · in goal" : `Penalty ${Math.min(m.cpu.length + 1, 5)} of 5 · stop 2 to win`;
+    $("#status").textContent = m.mode === "practice" ? "Practice · in goal" : `Penalty ${Math.min(m.cpu.length + 1, 5)} of 5 · ${duelNote(goals(m.cpu), m.cpu.length, false)}`;
   } else {
     const slots = sudden ? Math.max(m.you.length, m.cpu.length) + (m.you.length === m.cpu.length ? 1 : 0) : 5;
     $("#dots-you").innerHTML = dots(m.you, slots);
@@ -562,7 +578,7 @@ function pickCelebration(kicker: string, then: (id: string) => void) {
   $("#meters").hidden = true;
   $("#shuffle").hidden = true;
   show("celebrate");
-  grid.querySelector<HTMLButtonElement>("[aria-pressed=true]:not(:disabled)")?.focus() ?? grid.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+  (grid.querySelector<HTMLButtonElement>("[aria-pressed=true]:not(:disabled)") ?? grid.querySelector<HTMLButtonElement>("button:not(:disabled)"))?.focus();
 }
 
 function playCelebration(winner: Celebrant, loser: Celebrant, id: string, then: () => void) {
@@ -879,6 +895,8 @@ interface OnlineState {
   k: number;
   hostShots: boolean[];
   guestShots: boolean[];
+  /** Every kick's result by kick number (true = goal); the keeper's screen has the final say. */
+  outcomes: boolean[];
   kicks: KickResult[];
   opp: NetPeer | null;
   seenDive: string;
@@ -903,6 +921,7 @@ const opp = () => (net?.opp?.presence ?? {}) as Record<string, unknown> & {
   kx?: { k: number; x: number };
   res?: SentResult & { k: number };
   cel?: { m: string; id: string };
+  log?: { m: string; r: Record<string, number> };
 };
 
 const cleanNick = (s: unknown) => (typeof s === "string" ? s.replace(/[^\p{L}\p{N} ._-]/gu, "").trim().slice(0, 16) : "") || "Player 2";
@@ -965,7 +984,7 @@ async function joinAs(code: string, host: boolean) {
     $("#online-note").textContent = "Couldn’t connect. Check your connection and try again.";
     return;
   }
-  net = { room, host, ready: false, matchId: null, lastMatch: null, k: 0, hostShots: [], guestShots: [], kicks: [], opp: null, seenDive: "", over: false, waitCel: null };
+  net = { room, host, ready: false, matchId: null, lastMatch: null, k: 0, hostShots: [], guestShots: [], outcomes: [], kicks: [], opp: null, seenDive: "", over: false, waitCel: null };
   room.setPresence({
     app: "pc",
     v: 1,
@@ -1007,7 +1026,10 @@ function onPeers(peers: NetPeer[]) {
   const o = opp();
   // The guest follows the host into a match (and into rematches)
   if (net.opp && !net.host && typeof o.match === "string" && o.match !== net.lastMatch) startOnlineMatch(o.match);
-  if (net.matchId) applyRemote();
+  if (net.matchId) {
+    applyRemote();
+    reconcile();
+  }
   if (net.waitCel && o.cel?.m === net.matchId && typeof o.cel.id === "string") {
     const go = net.waitCel;
     net.waitCel = null;
@@ -1118,6 +1140,7 @@ function startOnlineMatch(id: string) {
   net.k = 0;
   net.hostShots = [];
   net.guestShots = [];
+  net.outcomes = [];
   net.kicks = [];
   net.over = false;
   net.waitCel = null;
@@ -1135,6 +1158,7 @@ function startOnlineMatch(id: string) {
 
 function onlineKick() {
   if (!net) return;
+  clearBanner();
   const k = net.k;
   const role = myRole(k);
   const striker = picksOf(strikerSide(k)).taker;
@@ -1190,7 +1214,16 @@ engine.onLocalResult = (r) => net?.room.setPresence({ res: { ...r, k: net.k } })
 function onlineResult(r: KickResult) {
   if (!net) return;
   net.kicks.push(r);
-  (strikerSide(net.k) === "host" ? net.hostShots : net.guestShots).push(r.outcome === "goal");
+  net.outcomes[net.k] = r.outcome === "goal";
+  rebuildShots();
+  // As keeper, publish the full record so the striker's screen can match it
+  if (r.role === "keep") {
+    const rec: Record<string, number> = {};
+    net.outcomes.forEach((g, k) => {
+      if (myRole(k) === "keep") rec[k] = g ? 1 : 0;
+    });
+    net.room.setPresence({ log: { m: net.matchId, r: rec } });
+  }
   if (r.role === "shoot") {
     save.totals.shots++;
     if (r.outcome === "goal") save.totals.goals++;
@@ -1209,10 +1242,38 @@ function onlineResult(r: KickResult) {
 
 function onlineKickDone() {
   if (!net) return;
+  reconcile();
   net.k++;
   const d = onlineDecided();
   if (d) finishOnline(d);
   else onlineKick();
+}
+
+function rebuildShots() {
+  if (!net) return;
+  net.hostShots = [];
+  net.guestShots = [];
+  net.outcomes.forEach((g, k) => (strikerSide(k) === "host" ? net!.hostShots : net!.guestShots).push(g));
+}
+
+/** Striker: if a kick was called here before the keeper's verdict arrived, take the keeper's. */
+function reconcile() {
+  if (!net?.matchId || net.over) return;
+  const log = opp().log;
+  if (!log || log.m !== net.matchId || typeof log.r !== "object") return;
+  let changed = false;
+  for (const [key, v] of Object.entries(log.r)) {
+    const k = Number(key);
+    if (!Number.isInteger(k) || myRole(k) !== "shoot" || net.outcomes[k] === undefined) continue;
+    if (net.outcomes[k] !== (v === 1)) {
+      net.outcomes[k] = v === 1;
+      changed = true;
+    }
+  }
+  if (changed) {
+    rebuildShots();
+    updateOnlineBoard();
+  }
 }
 
 function shotsOf(side: Side) {

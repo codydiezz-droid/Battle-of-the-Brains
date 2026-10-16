@@ -470,7 +470,7 @@ export const finalVideo = {
 export const miniGame = {
   name: "OneBridge Penalty Club",
   url: "./penalty-club/",
-  blurb: "A penalty shootout starring the seven of us and our coaches. Take the kicks or go in goal.",
+  blurb: "A 3D penalty shootout starring the seven of us and our coaches. Take the kicks, go in goal, or play a friend online.",
 };
 
 /** The final pitch deck, in public/presentation/. */
