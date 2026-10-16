@@ -9,6 +9,8 @@
  *  - the claude.ai artifact `room` capability, when the page runs as an artifact;
  *  - direct peer-to-peer (WebRTC via Trystero), found through two independent
  *    public signalling networks: Nostr relays and WebTorrent trackers;
+ *  - the same Nostr relays carrying the game messages themselves, for networks
+ *    (school Wi-Fi, mobile data) where a direct browser-to-browser link fails;
  *  - BroadcastChannel, for two windows on the same device.
  * Each player tags their presence with a client id and a counter, so the same
  * player heard over two routes counts once, with the newest state winning.
@@ -186,6 +188,139 @@ async function p2pRoutes(code: string): Promise<Route[]> {
   return out;
 }
 
+/* ───────────────────────────── Through the relays ───────────────────────────── */
+
+/*
+ * Presence sent as short-lived ("ephemeral") Nostr events on a topic made from
+ * the game code. Relays pass these on to subscribers without storing them.
+ * Slower than a direct link, but it only needs the relays to be reachable.
+ */
+async function relayRoute(code: string, urls: string[]): Promise<Route> {
+  const { schnorr } = await import("@noble/secp256k1");
+  const { secretKey, publicKey } = schnorr.keygen();
+  const hex = (b: Uint8Array) => [...b].map((x) => x.toString(16).padStart(2, "0")).join("");
+  const sha = async (text: string) => new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)));
+  const pubkey = hex(publicKey);
+  const topic = hex(await sha(`onebridge-penalty-club:${code.toLowerCase()}`)).slice(0, 32);
+  const kind = 20000 + (parseInt(topic.slice(0, 6), 16) % 10000);
+  const subId = `pc${topic.slice(0, 10)}`;
+
+  const others = new Map<string, { presence: Presence; seen: number }>();
+  let listener = () => {};
+  let mine: Presence = {};
+  const sockets = new Map<string, WebSocket>();
+  let closed = false;
+
+  const onEvent = (ev: { pubkey?: string; content?: string; tags?: string[][] }) => {
+    if (!ev || ev.pubkey === pubkey || !ev.tags?.some((t) => t[0] === "x" && t[1] === topic)) return;
+    let data: unknown;
+    try {
+      data = JSON.parse(String(ev.content));
+    } catch {
+      return;
+    }
+    if (!data || typeof data !== "object" || Array.isArray(data)) return;
+    const id = (data as Presence).cid;
+    if (typeof id !== "string") return;
+    const prev = others.get(id);
+    if (prev && Number((data as Presence).seq) < Number(prev.presence.seq)) {
+      prev.seen = Date.now();
+      return;
+    }
+    others.set(id, { presence: data as Presence, seen: Date.now() });
+    listener();
+  };
+
+  const connect = (url: string, delay = 0) => {
+    window.setTimeout(() => {
+      if (closed) return;
+      let ws: WebSocket;
+      try {
+        ws = new WebSocket(url);
+      } catch {
+        return;
+      }
+      sockets.set(url, ws);
+      ws.onopen = () => {
+        ws.send(JSON.stringify(["REQ", subId, { kinds: [kind], "#x": [topic], since: Math.floor(Date.now() / 1000) - 30 }]));
+        void publish();
+      };
+      ws.onmessage = (m) => {
+        try {
+          const msg = JSON.parse(String(m.data));
+          if (msg[0] === "EVENT" && msg[1] === subId) onEvent(msg[2]);
+        } catch {
+          /* not for us */
+        }
+      };
+      ws.onclose = () => {
+        if (sockets.get(url) === ws) sockets.delete(url);
+        if (!closed) connect(url, Math.min(30000, delay * 2 + 3000));
+      };
+      ws.onerror = () => ws.close();
+    }, delay);
+  };
+  urls.forEach((u) => connect(u));
+
+  // Send at most a few times a second, always the latest state
+  let lastSent = 0;
+  let queued = 0;
+  const publish = async () => {
+    const created_at = Math.floor(Date.now() / 1000);
+    const tags = [["x", topic]];
+    const content = JSON.stringify(mine);
+    const id = await sha(JSON.stringify([0, pubkey, created_at, kind, tags, content]));
+    const sig = await schnorr.signAsync(id, secretKey);
+    const msg = JSON.stringify(["EVENT", { id: hex(id), pubkey, created_at, kind, tags, content, sig: hex(sig) }]);
+    for (const ws of sockets.values()) if (ws.readyState === 1) ws.send(msg);
+    lastSent = Date.now();
+  };
+  const schedule = () => {
+    if (queued) return;
+    const wait = Math.max(0, 250 - (Date.now() - lastSent));
+    queued = window.setTimeout(() => {
+      queued = 0;
+      void publish();
+    }, wait);
+  };
+  // Heartbeat, and forget players who went quiet
+  const beat = window.setInterval(() => {
+    schedule();
+    const now = Date.now();
+    let changed = false;
+    for (const [id, o] of others)
+      if (now - o.seen > 12000) {
+        others.delete(id);
+        changed = true;
+      }
+    if (changed) listener();
+  }, 3000);
+
+  return {
+    name: "relay",
+    send(p) {
+      mine = p;
+      schedule();
+    },
+    others: () => [...others.values()].map((o) => o.presence),
+    onChange: (fn) => (listener = fn),
+    servers: () => ({ up: [...sockets.values()].filter((w) => w.readyState === 1).length, total: urls.length }),
+    leave() {
+      closed = true;
+      window.clearInterval(beat);
+      window.clearTimeout(queued);
+      for (const ws of sockets.values()) {
+        try {
+          ws.send(JSON.stringify(["CLOSE", subId]));
+        } catch {
+          /* already closed */
+        }
+        ws.close();
+      }
+    },
+  };
+}
+
 /* ───────────────────────────── Same device ───────────────────────────── */
 
 function localRoute(code: string): Route {
@@ -246,9 +381,15 @@ function localRoute(code: string): Route {
 export async function joinRoom(code: string, localOnly = false): Promise<NetRoom> {
   const routes: Route[] = [localRoute(code)];
   if (!localOnly) {
-    const [claude, p2p] = await Promise.all([claudeRoute(code).catch(() => null), p2pRoutes(code).catch(() => [] as Route[])]);
+    const testRelay = new URLSearchParams(location.search).get("relay");
+    const [claude, p2p, relay] = await Promise.all([
+      claudeRoute(code).catch(() => null),
+      testRelay ? Promise.resolve([] as Route[]) : p2pRoutes(code).catch(() => [] as Route[]),
+      relayRoute(code, testRelay ? [testRelay] : NOSTR_RELAYS).catch(() => null),
+    ]);
     if (claude) routes.push(claude);
     routes.push(...p2p);
+    if (relay) routes.push(relay);
   }
   const cid = Math.random().toString(36).slice(2, 12);
   let seq = 0;
@@ -295,7 +436,10 @@ export async function joinRoom(code: string, localOnly = false): Promise<NetRoom
     servers() {
       let up = 0;
       let total = 0;
+      const hasRelay = routes.some((r) => r.name === "relay");
       for (const r of routes) {
+        // The relay route and Trystero's Nostr route use the same servers: count them once
+        if (hasRelay && r.name === "nostr") continue;
         const s = r.servers?.();
         if (s) {
           up += s.up;
