@@ -92,7 +92,7 @@ function text(g: Ctx, s: string, cx: number, y: number, color: string, scale = 1
 /* ─────────────────────────────── Heads ─────────────────────────────── */
 
 /** The face (front of the head), 16 x 16. */
-export function faceTexture(look: Look) {
+function faceTextureLow(look: Look) {
   const { c, g } = canvas(16, 16);
   const skin = look.skin;
   const hair = look.hair;
@@ -215,7 +215,7 @@ export function faceTexture(look: Look) {
 const longHair = (s: Look["style"]) => s === "long" || s === "long-wavy" || s === "bob-bangs" || s === "chin";
 
 /** Side of the head, 16 x 16. mirror = the other side. */
-export function sideTexture(look: Look, mirror: boolean) {
+function sideTextureLow(look: Look, mirror: boolean) {
   const { c, g } = canvas(16, 16);
   px(g, 0, 0, look.skin, 16, 16);
   const h = look.hair;
@@ -234,7 +234,7 @@ export function sideTexture(look: Look, mirror: boolean) {
   return c;
 }
 
-export function backTexture(look: Look) {
+function backTextureLow(look: Look) {
   const { c, g } = canvas(16, 16);
   px(g, 0, 0, look.hair, 16, 16);
   if (!longHair(look.style)) px(g, 3, 12, look.skin, 10, 4); // neck under short hair
@@ -243,7 +243,7 @@ export function backTexture(look: Look) {
   return c;
 }
 
-export function topTexture(look: Look) {
+function topTextureLow(look: Look) {
   const { c, g } = canvas(16, 16);
   px(g, 0, 0, look.hair, 16, 16);
   for (let i = 0; i < 14; i++) px(g, (i * 7) % 16, (i * 5) % 16, shade(look.hair, 0.14));
@@ -252,7 +252,7 @@ export function topTexture(look: Look) {
   return c;
 }
 
-export function hairBlockTexture(look: Look) {
+function hairBlockTextureLow(look: Look) {
   const { c, g } = canvas(8, 16);
   px(g, 0, 0, look.hair, 8, 16);
   for (let y = 0; y < 16; y += 3) px(g, (y * 3) % 8, y, shade(look.hair, look.style === "long-wavy" ? 0.25 : 0.12), 2, 1);
@@ -306,7 +306,7 @@ function skull(g: Ctx, cx: number, cy: number) {
   px(g, cx + 1, cy - 1, "#141210", 1, 2);
 }
 
-export function torsoFront(k: Kit, number: number) {
+function torsoFrontLow(k: Kit, number: number) {
   const { c, g } = canvas(32, 40);
   shirtBase(g, k, 32, 40, true);
   if (k.pattern === "pirate") skull(g, 16, 14);
@@ -318,7 +318,7 @@ export function torsoFront(k: Kit, number: number) {
   return c;
 }
 
-export function torsoBack(k: Kit, name: string, number: number) {
+function torsoBackLow(k: Kit, name: string, number: number) {
   const { c, g } = canvas(32, 40);
   shirtBase(g, k, 32, 40, false);
   const n = name.slice(0, 7);
@@ -336,7 +336,7 @@ export function plainTexture(color: string, w = 8, h = 8, accent?: string) {
 }
 
 /** Arm: sleeve on top, skin (or keeper sleeve) below. 8 x 24. */
-export function armTexture(k: Kit, skin: string, keeper: boolean) {
+function armTextureLow(k: Kit, skin: string, keeper: boolean) {
   const { c, g } = canvas(8, 24);
   px(g, 0, 0, k.shirt, 8, keeper ? 24 : 9);
   px(g, 0, 8, k.trim, 8, 1);
@@ -346,13 +346,276 @@ export function armTexture(k: Kit, skin: string, keeper: boolean) {
 }
 
 /** Leg: shorts, skin, sock. 8 x 32. */
-export function legTexture(k: Kit, skin: string) {
+function legTextureLow(k: Kit, skin: string) {
   const { c, g } = canvas(8, 32);
   px(g, 0, 0, k.shorts, 8, 11);
   px(g, 0, 10, shade(k.shorts, -0.15), 8, 1);
   px(g, 0, 11, skin, 8, 6);
   px(g, 0, 17, k.socks, 8, 15);
   px(g, 0, 17, shade(k.socks, -0.2), 8, 1);
+  return c;
+}
+
+/* ───────────────────────── High-detail layer ───────────────────────── */
+
+/*
+ * Each texture is laid out on the small pixel grid above, then doubled and
+ * finished at full resolution: lighting across the form, fabric weave and
+ * folds on the kits, strands in the hair, and real eye, nose and lip detail.
+ */
+
+const rgb = (hex: string) => {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+};
+
+/** A small deterministic hash, so textures look the same every time. */
+const hash = (x: number, y: number, seed: number) => {
+  let h = (x * 374761393 + y * 668265263 + seed * 2147483647) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
+};
+
+function upscale(src: HTMLCanvasElement, k = 2) {
+  const out = canvas(src.width * k, src.height * k);
+  out.g.drawImage(src, 0, 0, out.c.width, out.c.height);
+  return out;
+}
+
+/**
+ * Scale the brightness of pixels: `light(x, y)` gives a factor (1 = unchanged).
+ * With `only`, just the pixels of that exact colour change.
+ */
+function relight(g: Ctx, w: number, h: number, light: (x: number, y: number) => number, only?: string) {
+  const img = g.getImageData(0, 0, w, h);
+  const d = img.data;
+  const want = only ? rgb(only) : null;
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      if (want && (d[i] !== want[0] || d[i + 1] !== want[1] || d[i + 2] !== want[2])) continue;
+      const f = light(x, y);
+      d[i] = Math.min(255, d[i] * f);
+      d[i + 1] = Math.min(255, d[i + 1] * f);
+      d[i + 2] = Math.min(255, d[i + 2] * f);
+    }
+  g.putImageData(img, 0, 0);
+}
+
+/** Strands: streaks of lighter and darker hair, mostly running downwards. */
+function hairGrain(g: Ctx, w: number, h: number, hair: string, seed: number) {
+  // Dark hair needs strong highlights to show strands; light hair only a hint
+  const [r, gr, b] = rgb(hair);
+  const lum = (0.3 * r + 0.59 * gr + 0.11 * b) / 255;
+  const hi = 1 + 0.34 * (1 - lum);
+  const lo = 1 - 0.12 - 0.1 * lum;
+  relight(
+    g,
+    w,
+    h,
+    (x, y) => {
+      const strand = hash(x, Math.floor(y / 3), seed);
+      const sheen = y < h * 0.3 ? 1.1 : 1;
+      return (strand > 0.82 ? hi : strand < 0.18 ? lo : 1) * (lum > 0.6 ? 1 : sheen);
+    },
+    hair,
+  );
+}
+
+const lipColor = (skin: string) => {
+  const [r, g, b] = rgb(skin);
+  return `rgb(${Math.round(r * 0.78 + 40)},${Math.round(g * 0.55)},${Math.round(b * 0.58)})`;
+};
+
+/** The face, 32 x 32. */
+export function faceTexture(look: Look) {
+  const { c, g } = upscale(faceTextureLow(look));
+  const skin = look.skin;
+  const P = (x: number, y: number, color: string, w = 1, h = 1) => px(g, x, y, color, w, h);
+  // Clear the feature area and redraw it at full detail
+  P(4, 14, skin, 24, 16);
+  // Brows: a little thinner towards the outside
+  P(6, 12, skin);
+  P(25, 12, skin);
+  P(6, 13, shade(look.brows, 0.15));
+  P(25, 13, shade(look.brows, 0.15));
+  // Eyes: lid line, white, iris with pupil and catch-light, a soft shadow below
+  for (const [ex, ix] of [
+    [6, 8],
+    [20, 22],
+  ]) {
+    P(ex, 14, shade(skin, -0.42), 6, 1);
+    P(ex, 15, "#f2eee6", 6, 2);
+    P(ix, 15, look.eyes, 2, 2);
+    P(ix, 16, shade(look.eyes, -0.5), 2, 1);
+    P(ix, 15, shade(look.eyes, 0.55), 1, 1);
+    P(ex, 17, shade(skin, -0.12), 6, 1);
+    P(ex - 1, 14, shade(skin, -0.25));
+    P(ex + 6, 14, shade(skin, -0.25));
+  }
+  // Nose: lit bridge, shaded side, tip and nostrils
+  P(15, 16, shade(skin, 0.1), 2, 4);
+  P(14, 17, shade(skin, -0.08), 1, 4);
+  P(13, 21, shade(skin, -0.16), 6, 1);
+  P(14, 22, shade(skin, -0.3));
+  P(17, 22, shade(skin, -0.3));
+  P(15, 22, shade(skin, -0.12), 2, 1);
+  // Philtrum
+  P(15, 23, shade(skin, -0.06), 2, 1);
+  // Mouth
+  const lip = lipColor(skin);
+  if (look.smile) {
+    P(10, 24, shade(skin, -0.3));
+    P(21, 24, shade(skin, -0.3));
+    P(11, 25, shade(lip, -0.25), 10, 1);
+    P(12, 26, "#f6f2ea", 8, 1);
+    P(11, 26, shade(skin, -0.45));
+    P(20, 26, shade(skin, -0.45));
+    P(12, 27, lip, 8, 1);
+    P(13, 28, shade(lip, 0.18), 6, 1);
+  } else {
+    P(12, 25, shade(lip, -0.12), 8, 1);
+    P(11, 26, shade(skin, -0.4), 10, 1);
+    P(12, 27, lip, 8, 1);
+    P(13, 27, shade(lip, 0.15), 3, 1);
+  }
+  // Chin and jaw shadow
+  P(13, 29, shade(skin, 0.06), 6, 1);
+  // Warm cheeks
+  g.fillStyle = "rgba(220, 90, 80, 0.14)";
+  g.fillRect(5, 20, 4, 3);
+  g.fillRect(23, 20, 4, 3);
+  // Glasses over the eyes
+  if (look.glasses) {
+    const f = look.glasses;
+    for (const ex of [4, 18]) {
+      P(ex, 12, f, 10, 1);
+      P(ex, 19, f, 10, 1);
+      P(ex, 12, f, 1, 8);
+      P(ex + 9, 12, f, 1, 8);
+      g.fillStyle = "rgba(255,255,255,0.18)";
+      g.fillRect(ex + 1, 13, 3, 1);
+    }
+    P(14, 14, f, 4, 1);
+  }
+  // Light from above and the front: brighter forehead, rounder sides, shadowed jaw
+  relight(
+    g,
+    32,
+    32,
+    (x, y) => {
+      const side = Math.abs(x - 15.5) / 15.5;
+      return 1.06 - 0.12 * side * side - (y > 27 ? 0.08 : 0) - (y < 12 ? -0.03 : 0);
+    },
+    skin,
+  );
+  hairGrain(g, 32, 32, look.hair, 1);
+  return c;
+}
+
+export function sideTexture(look: Look, mirror: boolean) {
+  const { c, g } = upscale(sideTextureLow(look, mirror));
+  // Ear detail
+  if (!longHair(look.style)) {
+    px(g, 14, 15, shade(look.skin, -0.25), 4, 5);
+    px(g, 15, 16, shade(look.skin, -0.05), 2, 3);
+  }
+  relight(g, 32, 32, (_x, y) => 0.94 - (y > 27 ? 0.08 : 0), look.skin);
+  hairGrain(g, 32, 32, look.hair, mirror ? 2 : 3);
+  return c;
+}
+
+export function backTexture(look: Look) {
+  const { c, g } = upscale(backTextureLow(look));
+  hairGrain(g, 32, 32, look.hair, 4);
+  relight(g, 32, 32, () => 0.88, look.skin);
+  return c;
+}
+
+export function topTexture(look: Look) {
+  const { c, g } = upscale(topTextureLow(look));
+  hairGrain(g, 32, 32, look.hair, 5);
+  return c;
+}
+
+export function hairBlockTexture(look: Look) {
+  const { c, g } = upscale(hairBlockTextureLow(look));
+  hairGrain(g, 16, 32, look.hair, 6);
+  return c;
+}
+
+/** Fabric: light from the top left, darker sides, a fine mesh and soft folds. */
+function fabric(g: Ctx, w: number, h: number, seed: number) {
+  relight(g, w, h, (x, y) => {
+    const side = Math.abs(x - w / 2) / (w / 2);
+    const mesh = (x + y) % 2 === 0 ? 1.03 : 0.98;
+    const fold = 1 - 0.07 * Math.max(0, Math.sin((x * 0.9 + y * 0.35 + seed) * 0.42)) * (y / h);
+    return (1.08 - 0.16 * side * side - 0.08 * (y / h)) * mesh * fold;
+  });
+}
+
+/** A shield crest in the kit's trim colour (a generic badge, not a federation crest). */
+function crest(g: Ctx, x: number, y: number, k: Kit) {
+  const edge = shade(k.trim, -0.25);
+  px(g, x, y, edge, 8, 1);
+  px(g, x, y, edge, 1, 7);
+  px(g, x + 7, y, edge, 1, 7);
+  px(g, x + 1, y + 7, edge, 6, 1);
+  px(g, x + 2, y + 8, edge, 4, 1);
+  px(g, x + 1, y + 1, k.trim, 6, 6);
+  px(g, x + 2, y + 7, k.trim, 4, 1);
+  // Star
+  px(g, x + 3, y + 2, k.shirt, 2, 4);
+  px(g, x + 2, y + 3, k.shirt, 4, 2);
+  px(g, x + 1, y + 1, shade(k.trim, 0.4), 2, 1);
+}
+
+export function torsoFront(k: Kit, number: number) {
+  const { c, g } = upscale(torsoFrontLow(k, number));
+  if (k.pattern !== "pirate") {
+    // Swap the little badge for a crest
+    px(g, 16, 16, k.shirt, 6, 8);
+    crest(g, 15, 14, k);
+  }
+  // Ribbed collar
+  for (let x = 24; x < 40; x += 2) px(g, x, 0, shade(k.trim, -0.2), 1, 2);
+  fabric(g, 64, 80, 1);
+  // Seam between shirt and shorts
+  px(g, 0, 75, "rgba(0,0,0,0.25)", 64, 1);
+  return c;
+}
+
+export function torsoBack(k: Kit, name: string, number: number) {
+  const { c, g } = upscale(torsoBackLow(k, name, number));
+  fabric(g, 64, 80, 7);
+  return c;
+}
+
+export function armTexture(k: Kit, skin: string, keeper: boolean) {
+  const { c, g } = upscale(armTextureLow(k, skin, keeper));
+  // Cuff rib
+  px(g, 0, 15, shade(k.trim, 0.25), 16, 1);
+  relight(g, 16, 48, (x, y) => 1.05 - 0.14 * Math.abs(x - 7.5) / 7.5 - (y < 18 && !keeper ? 0 : 0.02));
+  return c;
+}
+
+export function legTexture(k: Kit, skin: string) {
+  const { c, g } = upscale(legTextureLow(k, skin));
+  // Sock ribbing and the turned-over top
+  for (let y = 38; y < 64; y += 2) px(g, 0, y, "rgba(0,0,0,0.07)", 16, 1);
+  px(g, 0, 34, shade(k.socks, 0.2), 16, 2);
+  relight(g, 16, 64, (x) => 1.05 - 0.16 * Math.abs(x - 7.5) / 7.5);
+  return c;
+}
+
+/** Shin and sock below the knee, with ribbing and a shin pad bump. */
+export function sockTexture(k: Kit) {
+  const { c, g } = canvas(16, 32);
+  px(g, 0, 0, k.socks, 16, 32);
+  for (let y = 1; y < 32; y += 2) px(g, 0, y, "rgba(0,0,0,0.07)", 16, 1);
+  px(g, 3, 4, "rgba(255,255,255,0.08)", 10, 16);
+  px(g, 0, 26, shade(k.trim, 0), 16, 2);
+  relight(g, 16, 32, (x) => 1.04 - 0.16 * Math.abs(x - 7.5) / 7.5);
   return c;
 }
 

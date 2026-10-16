@@ -1,5 +1,5 @@
 import { buildStand } from "./stand";
-import { sponsorStrip } from "./sponsors";
+import { boardOrder, sponsorStrip } from "./sponsors";
 import {
   AmbientLight,
   BoxGeometry,
@@ -304,7 +304,7 @@ export function buildStadium(): Stadium {
     },
     update(t, dt, cheer) {
       // The LED boards rotate through the sponsors
-      for (const b of boards) b.offset.x = Math.floor(t / 6) * 0.125;
+      for (const b of boards) b.offset.x = Math.floor(t / 6) / boardOrder.length;
       for (const s of endStands) s.update(t, cheer);
       // The crowd bounces when it cheers
       stands.forEach((s, i) => (s.position.y = 7.5 + (cheer > 0 ? Math.abs(Math.sin(t * 9 + i)) * 0.35 * cheer : 0)));

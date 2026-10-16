@@ -8,6 +8,8 @@ import { joinRoom, newCode, type NetPeer, type NetRoom } from "./net";
 import { byId, roster, type Player } from "./players";
 import { persist, save } from "./storage";
 import { cardPortrait } from "./textures";
+import { celebrations } from "./celebrations";
+import { achievements, award, levelOf, unlock, xpFor, type Achievement, type Award } from "./progress";
 
 type Mode = "challenge" | "keeper" | "shootout" | "practice" | "online";
 
@@ -22,7 +24,7 @@ sfx.setMuted(save.muted);
 
 /* ───────────────────────────── Screens ───────────────────────────── */
 
-const screens = ["menu", "select", "hud", "paused", "end", "online", "lobby"] as const;
+const screens = ["menu", "select", "hud", "paused", "end", "online", "lobby", "trophies", "celebrate"] as const;
 type Screen = (typeof screens)[number];
 function show(...visible: Screen[]) {
   for (const s of screens) $(`#${s}`).hidden = !visible.includes(s);
@@ -44,6 +46,98 @@ function syncMenu() {
   const sv = save.totals.faced ? Math.round((save.totals.saves / save.totals.faced) * 100) : 0;
   $("[data-best=practice]").textContent = save.totals.shots || save.totals.faced ? `Career: ${acc}% scored, ${sv}% saved` : "No kicks yet";
   syncSound();
+  syncProfile();
+}
+
+/* ───────────────────────────── Progress ───────────────────────────── */
+
+function levelProgress(xp: number) {
+  const l = levelOf(xp);
+  const lo = xpFor(l);
+  const hi = xpFor(l + 1);
+  return { level: l, into: xp - lo, need: hi - lo, pct: ((xp - lo) / (hi - lo)) * 100 };
+}
+
+function syncProfile() {
+  const p = levelProgress(save.xp);
+  $("#profile-level").textContent = `Lv ${p.level}`;
+  $("#profile-fill").style.width = `${p.pct}%`;
+  $("#profile-xp").textContent = `${p.into} / ${p.need} XP`;
+  const st = $("#profile-streak");
+  st.hidden = save.streak.days < 2;
+  st.textContent = `${save.streak.days}-day streak`;
+  $("#open-trophies").textContent = `Trophies ${save.achievements.length} / ${achievements.length}`;
+}
+
+function renderTrophies() {
+  const lvl = levelOf(save.xp);
+  $("#trophies-kicker").textContent = `Level ${lvl} · ${save.xp} XP`;
+  const cels = $("#trophy-cels");
+  cels.innerHTML = "";
+  for (const c of celebrations) {
+    const li = document.createElement("li");
+    li.className = c.level > lvl ? "locked" : "";
+    li.innerHTML = `<strong></strong><span></span>`;
+    li.querySelector("strong")!.textContent = c.name;
+    li.querySelector("span")!.textContent = c.level > lvl ? `Unlocks at level ${c.level}` : c.by;
+    cels.appendChild(li);
+  }
+  const achs = $("#trophy-achs");
+  achs.innerHTML = "";
+  for (const a of achievements) {
+    const got = save.achievements.includes(a.id);
+    const li = document.createElement("li");
+    li.className = got ? "got" : "locked";
+    li.innerHTML = `<strong></strong><span></span>`;
+    li.querySelector("strong")!.textContent = got ? `${a.name} ✓` : a.name;
+    li.querySelector("span")!.textContent = a.how;
+    achs.appendChild(li);
+  }
+}
+$("#open-trophies").addEventListener("click", () => {
+  renderTrophies();
+  show("trophies");
+});
+$("#trophies-back").addEventListener("click", () => {
+  syncMenu();
+  show("menu");
+});
+
+/* Achievement toasts, one at a time */
+const toastQueue: string[] = [];
+let toastBusy = false;
+function toast(html: string) {
+  toastQueue.push(html);
+  if (!toastBusy) nextToast();
+}
+function nextToast() {
+  const t = $("#toast");
+  const html = toastQueue.shift();
+  if (!html) {
+    toastBusy = false;
+    t.hidden = true;
+    return;
+  }
+  toastBusy = true;
+  t.innerHTML = html;
+  t.hidden = false;
+  window.setTimeout(nextToast, 2600);
+}
+let matchUnlocks: Achievement[] = [];
+function achieve(id: string) {
+  const a = unlock(id);
+  if (!a) return;
+  matchUnlocks.push(a);
+  toast(`<strong>Achievement:</strong> ${a.name}`);
+}
+/** Achievements any single kick can earn. */
+function kickAchievements(r: KickResult) {
+  if (r.role === "shoot" && r.outcome === "goal") {
+    achieve("first-goal");
+    if (r.perfect) achieve("perfect");
+    if (save.totals.goals >= 25) achieve("century");
+  }
+  if (r.role === "keep" && r.outcome !== "goal") achieve("first-save");
 }
 
 document.querySelectorAll<HTMLInputElement>("input[name=diff]").forEach((r) =>
@@ -230,6 +324,7 @@ function startMatch() {
   const cpuShooter = save.cpuShooterId === "random" ? pickCpu([myShooter.id, myKeeper.id]) : byId(save.cpuShooterId);
   const cpuKeeper = save.cpuKeeperId === "random" ? pickCpu([myShooter.id, myKeeper.id, cpuShooter.id]) : byId(save.cpuKeeperId);
   match = { mode, you: [], cpu: [], kicks: [], practiceRole: "shoot", myShooter, myKeeper, cpuShooter, cpuKeeper, over: false };
+  matchUnlocks = [];
   if (mode === "keeper") match.practiceRole = "keep";
   engine.setDifficulty(save.difficulty);
   engine.resetMemory();
@@ -290,6 +385,7 @@ engine.onResult = (r) => {
     if (r.outcome !== "goal") save.totals.saves++;
   }
   persist();
+  kickAchievements(r);
   showBanner(r.label, r.good);
   updateBoard();
   $("#live").textContent = `${r.label} ${boardText()}`;
@@ -301,7 +397,7 @@ engine.onKickDone = () => {
   if (net?.matchId) return onlineKickDone();
   if (match.over) return;
   const decided = matchDecided();
-  if (decided) endMatch(decided);
+  if (decided) finishMatch(decided);
   else nextKick();
 };
 
@@ -358,13 +454,13 @@ function updateBoard() {
   if (m.mode === "challenge" || (m.mode === "practice" && m.practiceRole === "shoot")) {
     $("#dots-you").innerHTML = dots(m.mode === "practice" ? m.you.slice(-5) : m.you, 5);
     $("#score").textContent = m.mode === "practice" ? `${goals(m.you)} / ${m.you.length}` : `${goals(m.you)} / 5`;
-    $("#status").textContent = m.mode === "practice" ? "Practice · shooting" : `Penalty ${Math.min(m.you.length + 1, 5)} of 5`;
+    $("#status").textContent = m.mode === "practice" ? "Practice · shooting" : `Penalty ${Math.min(m.you.length + 1, 5)} of 5 · score 4 to win`;
   } else if (m.mode === "keeper" || (m.mode === "practice" && m.practiceRole === "keep")) {
     // For a keeper, green is a stop
     const saves = m.cpu.map((g) => !g);
     $("#dots-you").innerHTML = dots(m.mode === "practice" ? saves.slice(-5) : saves, 5);
     $("#score").textContent = m.mode === "practice" ? `${goals(saves)} / ${saves.length} saved` : `${goals(saves)} saved`;
-    $("#status").textContent = m.mode === "practice" ? "Practice · in goal" : `Penalty ${Math.min(m.cpu.length + 1, 5)} of 5`;
+    $("#status").textContent = m.mode === "practice" ? "Practice · in goal" : `Penalty ${Math.min(m.cpu.length + 1, 5)} of 5 · stop 2 to win`;
   } else {
     const slots = sudden ? Math.max(m.you.length, m.cpu.length) + (m.you.length === m.cpu.length ? 1 : 0) : 5;
     $("#dots-you").innerHTML = dots(m.you, slots);
@@ -375,6 +471,178 @@ function updateBoard() {
     $("#status").textContent = sudden ? `Sudden death · ${turn}` : `Round ${Math.min(round, 5)} · ${turn}`;
   }
 }
+
+/*
+ * Who wins a five-kick duel: the striker needs 4 goals; 2 stops (saves,
+ * posts or misses) win it for the keeper. The two can never both happen.
+ */
+const STRIKER_NEEDS = 4;
+const strikerWon = (scored: number) => scored >= STRIKER_NEEDS;
+
+interface Celebrant {
+  player: Player;
+  keeper: boolean;
+}
+
+/** Offline: who celebrates, and whether that is the human player. */
+function offlineWinner(result: "you" | "cpu" | "done"): { winner: Celebrant; loser: Celebrant; human: boolean } | null {
+  const m = match;
+  const striker = (p: Player): Celebrant => ({ player: p, keeper: false });
+  const keeper = (p: Player): Celebrant => ({ player: p, keeper: true });
+  if (m.mode === "challenge") {
+    return strikerWon(goals(m.you))
+      ? { winner: striker(m.myShooter), loser: keeper(m.cpuKeeper), human: true }
+      : { winner: keeper(m.cpuKeeper), loser: striker(m.myShooter), human: false };
+  }
+  if (m.mode === "keeper") {
+    return strikerWon(goals(m.cpu))
+      ? { winner: striker(m.cpuShooter), loser: keeper(m.myKeeper), human: false }
+      : { winner: keeper(m.myKeeper), loser: striker(m.cpuShooter), human: true };
+  }
+  if (m.mode === "shootout") {
+    return result === "you"
+      ? { winner: striker(m.myShooter), loser: keeper(m.cpuKeeper), human: true }
+      : { winner: striker(m.cpuShooter), loser: keeper(m.myKeeper), human: false };
+  }
+  return null;
+}
+
+function finishMatch(result: "you" | "cpu" | "done") {
+  match.over = true;
+  const w = offlineWinner(result);
+  if (!w) return endMatch(result);
+  const run = (id: string) => playCelebration(w.winner, w.loser, id, () => endMatch(result));
+  if (w.human) pickCelebration("You win", run);
+  else run(cpuCelebration());
+}
+
+/** Celebrations this player has unlocked. */
+const unlockedCelebrations = () => celebrations.filter((c) => c.level <= levelOf(save.xp));
+const cpuCelebration = () => celebrations[Math.floor(Math.random() * celebrations.length)].id;
+
+let pickTimer = 0;
+/** The winner chooses a celebration (the last one used is offered first; 10 s to choose). */
+function pickCelebration(kicker: string, then: (id: string) => void) {
+  const grid = $("#cel-grid");
+  grid.innerHTML = "";
+  const lvl = levelOf(save.xp);
+  let done = false;
+  const choose = (id: string) => {
+    if (done) return;
+    done = true;
+    window.clearInterval(pickTimer);
+    save.celebration = id;
+    persist();
+    show("hud");
+    then(id);
+  };
+  for (const c of celebrations) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "cel";
+    b.disabled = c.level > lvl;
+    b.setAttribute("aria-pressed", String(c.id === save.celebration));
+    b.innerHTML = `<span class="cel-name"></span><span class="cel-by"></span>`;
+    b.querySelector(".cel-name")!.textContent = c.name;
+    b.querySelector(".cel-by")!.textContent = c.level > lvl ? `Unlocks at level ${c.level}` : c.by;
+    b.addEventListener("click", () => choose(c.id));
+    grid.appendChild(b);
+  }
+  $("#celebrate-kicker").textContent = kicker;
+  const fallback = unlockedCelebrations().some((c) => c.id === save.celebration) ? save.celebration : "siu";
+  let left = 10;
+  const tick = () => ($("#cel-timer").textContent = `${celebrations.find((c) => c.id === fallback)!.name} in ${left} s if you don’t choose`);
+  tick();
+  window.clearInterval(pickTimer);
+  pickTimer = window.setInterval(() => {
+    left--;
+    if (left <= 0) choose(fallback);
+    else tick();
+  }, 1000);
+  $("#meters").hidden = true;
+  $("#shuffle").hidden = true;
+  show("celebrate");
+  grid.querySelector<HTMLButtonElement>("[aria-pressed=true]:not(:disabled)")?.focus() ?? grid.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+}
+
+function playCelebration(winner: Celebrant, loser: Celebrant, id: string, then: () => void) {
+  const c = celebrations.find((x) => x.id === id) ?? celebrations[0];
+  $("#meters").hidden = true;
+  $("#shuffle").hidden = true;
+  $("#coach").hidden = true;
+  show("hud");
+  showBanner(c.shout, true);
+  $("#banner").classList.add("celebrate-shout");
+  $("#live").textContent = `${winner.player.firstName} celebrates: ${c.name}.`;
+  engine.celebrate(winner.player, winner.keeper, loser.player, loser.keeper, c.id, () => {
+    $("#banner").hidden = true;
+    $("#banner").classList.remove("celebrate-shout");
+    then();
+  });
+}
+
+/** XP for a finished match, shown on the results screen. */
+function showAward(kicks: KickResult[], won: boolean, bonusHard: boolean) {
+  const shots = kicks.filter((k) => k.role === "shoot");
+  const faced = kicks.filter((k) => k.role === "keep");
+  const scored = shots.filter((k) => k.outcome === "goal").length;
+  const saved = faced.filter((k) => k.outcome !== "goal").length;
+  const perfect = shots.filter((k) => k.outcome === "goal" && k.perfect).length;
+  const lines: [string, number][] = [
+    ["Match played", 10],
+    [`Goals × ${scored}`, scored * 10],
+    [`Stops × ${saved}`, saved * 12],
+    [`Perfect strikes × ${perfect}`, perfect * 5],
+    ["Win", won ? 40 : 0],
+  ];
+  if (bonusHard) lines.push(["Hard difficulty bonus", Math.round(lines.reduce((a, [, n]) => a + n, 0) * 0.5)]);
+  renderAward(award(lines));
+}
+
+function renderAward(a: Award) {
+  $("#end-xp").hidden = false;
+  const before = levelProgress(a.before);
+  const after = levelProgress(a.after);
+  $("#end-level").textContent = `Lv ${after.level}`;
+  $("#end-gained").textContent = `+${a.gained} XP`;
+  const fillEl = $("#end-fill");
+  fillEl.style.transition = "none";
+  fillEl.style.width = `${a.levelUp ? 0 : before.pct}%`;
+  void fillEl.offsetWidth;
+  fillEl.style.transition = "";
+  window.setTimeout(() => (fillEl.style.width = `${after.pct}%`), 60);
+  const ul = $("#end-xp-lines");
+  ul.innerHTML = "";
+  for (const [label, n] of a.lines) {
+    const li = document.createElement("li");
+    li.innerHTML = `<span></span><span>+${n}</span>`;
+    li.querySelector("span")!.textContent = label;
+    ul.appendChild(li);
+  }
+  const notes: string[] = [];
+  if (a.levelUp) notes.push(`Level up! You are now level ${after.level}.`);
+  if (a.newCelebrations.length) notes.push(`New celebration: ${a.newCelebrations.join(", ")}.`);
+  if (matchUnlocks.length) notes.push(`Achievement: ${matchUnlocks.map((x) => x.name).join(", ")}.`);
+  const un = $("#end-unlocks");
+  un.hidden = !notes.length;
+  un.textContent = notes.join(" ");
+  if (a.levelUp) sfx.crowd("cheer", true);
+}
+
+let shareText = "";
+$("#share").addEventListener("click", async () => {
+  const url = location.origin + location.pathname;
+  const text = `${shareText} Think you can beat it? OneBridge Penalty Club:`;
+  try {
+    if (navigator.share) await navigator.share({ title: "OneBridge Penalty Club", text, url });
+    else {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      toast("Result copied. Paste it to a friend.");
+    }
+  } catch {
+    /* the share sheet was closed */
+  }
+});
 
 function endMatch(result: "you" | "cpu" | "done") {
   match.over = true;
@@ -389,12 +657,16 @@ function endMatch(result: "you" | "cpu" | "done") {
   let score = "";
   let line = "";
   let best = false;
+  let won = false;
   if (m.mode === "challenge") {
     const n = goals(m.you);
     kicker += "Penalty Challenge";
-    title = n === 5 ? "PERFECT FIVE!" : `${n} from 5`;
+    won = strikerWon(n);
+    title = n === 5 ? "PERFECT FIVE!" : won ? "YOU BEAT THE KEEPER!" : "THE KEEPER WINS";
     score = `${n} / 5`;
-    line = ["The keeper had your number.", "One goal. Work on your timing.", "Two goals. Aim further from the keeper.", "Three goals. Solid.", "Four from five. Ice cold.", "Five from five. Clinical."][n];
+    line = ["The keeper had your number.", "One goal. Work on your timing.", "Two goals. Aim further from the keeper.", "Three goals. One short: you need 4 to win.", "Four from five. Ice cold.", "Five from five. Clinical."][n];
+    shareText = `I scored ${n} from 5 penalties on ${DIFF[d].label}.`;
+    if (n === 5) achieve("clinical");
     if (n > save.best.challenge[d]) {
       save.best.challenge[d] = n;
       best = true;
@@ -402,17 +674,23 @@ function endMatch(result: "you" | "cpu" | "done") {
   } else if (m.mode === "keeper") {
     const n = m.cpu.filter((g) => !g).length;
     kicker += "Goalkeeper Challenge";
-    title = n >= 4 ? "A WALL!" : `${n} kept out`;
+    won = !strikerWon(5 - n);
+    title = n >= 4 ? "A WALL!" : won ? "YOU WIN IN GOAL!" : "THE STRIKER WINS";
     score = `${n} / 5`;
-    line = ["They found the corners every time.", "One stop. Watch the hips at the plant.", "Two stops. Dive as the ball is struck.", "Three stops. A proper keeper.", "Four stops. Outstanding.", "Clean sheet. Unbeatable."][n];
+    line = ["They found the corners every time.", "One stop. You need 2 to win.", "Two stops. That’s the win.", "Three stops. A proper keeper.", "Four stops. Outstanding.", "Clean sheet. Unbeatable."][n];
+    shareText = `I kept out ${n} of 5 penalties on ${DIFF[d].label}.`;
+    if (n >= 4) achieve("wall");
     if (n > save.best.keeper[d]) {
       save.best.keeper[d] = n;
       best = true;
     }
   } else {
     kicker += "Full Shootout";
-    const won = result === "you";
+    won = result === "you";
     title = won ? "SHOOTOUT WINNER!" : "Shootout lost";
+    shareText = `I ${won ? "won" : "lost"} a penalty shootout ${goals(m.you)}–${goals(m.cpu)} on ${DIFF[d].label}.`;
+    if (won) achieve("shootout");
+    if (won && m.you.length > 5) achieve("sudden");
     score = `${goals(m.you)} – ${goals(m.cpu)}`;
     const sudden = m.you.length > 5;
     line = won ? (sudden ? "Won in sudden death." : "Southwestern wins it.") : sudden ? "Lost in sudden death." : "So close. Rematch?";
@@ -435,6 +713,8 @@ function endMatch(result: "you" | "cpu" | "done") {
   }
   if (faced.length) rows.push(["Penalties saved", `${faced.filter((k) => k.outcome !== "goal").length} / ${faced.length}`]);
   $("#end-stats").innerHTML = rows.map(([a, b]) => `<div><dt>${a}</dt><dd>${b}</dd></div>`).join("");
+  if (won && d === "hard") achieve("hard");
+  showAward(m.kicks, won, d === "hard");
   show("end");
 }
 
@@ -472,6 +752,7 @@ $("#restart").addEventListener("click", () => {
 });
 $("#to-menu").addEventListener("click", () => {
   engine.paused = false;
+  engine.cancelCelebration();
   engine.phase = "idle";
   if (match) match.over = true;
   sfx.stopAmbience();
@@ -602,6 +883,8 @@ interface OnlineState {
   opp: NetPeer | null;
   seenDive: string;
   over: boolean;
+  /** Set while the loser waits for the winner to pick a celebration. */
+  waitCel: ((id: string) => void) | null;
 }
 let net: OnlineState | null = null;
 
@@ -619,6 +902,7 @@ const opp = () => (net?.opp?.presence ?? {}) as Record<string, unknown> & {
   dive?: SentDive & { k: number };
   kx?: { k: number; x: number };
   res?: SentResult & { k: number };
+  cel?: { m: string; id: string };
 };
 
 const cleanNick = (s: unknown) => (typeof s === "string" ? s.replace(/[^\p{L}\p{N} ._-]/gu, "").trim().slice(0, 16) : "") || "Player 2";
@@ -681,7 +965,7 @@ async function joinAs(code: string, host: boolean) {
     $("#online-note").textContent = "Couldn’t connect. Check your connection and try again.";
     return;
   }
-  net = { room, host, ready: false, matchId: null, lastMatch: null, k: 0, hostShots: [], guestShots: [], kicks: [], opp: null, seenDive: "", over: false };
+  net = { room, host, ready: false, matchId: null, lastMatch: null, k: 0, hostShots: [], guestShots: [], kicks: [], opp: null, seenDive: "", over: false, waitCel: null };
   room.setPresence({
     app: "pc",
     v: 1,
@@ -720,6 +1004,11 @@ function onPeers(peers: NetPeer[]) {
   // The guest follows the host into a match (and into rematches)
   if (net.opp && !net.host && typeof o.match === "string" && o.match !== net.lastMatch) startOnlineMatch(o.match);
   if (net.matchId) applyRemote();
+  if (net.waitCel && o.cel?.m === net.matchId && typeof o.cel.id === "string") {
+    const go = net.waitCel;
+    net.waitCel = null;
+    go(celebrations.some((c) => c.id === o.cel!.id) ? o.cel.id : "siu");
+  }
   if (!$("#lobby").hidden) renderLobby();
 }
 
@@ -747,7 +1036,7 @@ function renderLobby() {
   $("#lobby-settings").hidden = !net.host;
   const s = settings();
   const meStart = s.hostRole === "shoot" ? (net.host ? "striker" : "goalkeeper") : net.host ? "goalkeeper" : "striker";
-  $("#lobby-format").textContent = `${s.format === "duel" ? "Striker vs keeper, 5 kicks" : "Full shootout, taking turns"} · you start as ${meStart}.`;
+  $("#lobby-format").textContent = `${s.format === "duel" ? "Striker vs keeper, 5 kicks: 4 goals wins for the striker, 2 stops for the keeper" : "Full shootout, taking turns"} · you start as ${meStart}.`;
   ($("#lobby-start") as HTMLButtonElement).disabled = !(net.host && net.opp && net.ready && o.ready);
   $("#lobby-start").hidden = !net.host;
   const rb = $("#lobby-ready");
@@ -825,6 +1114,9 @@ function startOnlineMatch(id: string) {
   net.guestShots = [];
   net.kicks = [];
   net.over = false;
+  net.waitCel = null;
+  window.clearInterval(pickTimer);
+  matchUnlocks = [];
   engine.setDifficulty("medium");
   $("#practice-switch").hidden = true;
   $("#pause").hidden = true;
@@ -900,7 +1192,9 @@ function onlineResult(r: KickResult) {
     save.totals.faced++;
     if (r.outcome !== "goal") save.totals.saves++;
   }
+  if (r.role === "shoot" && r.outcome === "goal" && r.perfect) save.totals.perfect++;
   persist();
+  kickAchievements(r);
   showBanner(r.label, r.good);
   updateOnlineBoard();
   $("#live").textContent = r.label;
@@ -911,7 +1205,7 @@ function onlineKickDone() {
   if (!net) return;
   net.k++;
   const d = onlineDecided();
-  if (d) endOnline(d);
+  if (d) finishOnline(d);
   else onlineKick();
 }
 
@@ -950,10 +1244,61 @@ function updateOnlineBoard() {
   $("#status").textContent = duel ? `Kick ${Math.min(net.k + 1, 5)} of 5 · ${turn}` : sudden ? `Sudden death · ${turn}` : `Round ${Math.min(Math.floor(net.k / 2) + 1, 5)} · ${turn}`;
 }
 
+/** Which side won: in a duel the striker needs 4 goals, otherwise the keeper wins. */
+function onlineWinnerSide(result: Side | "done"): Side {
+  if (result !== "done") return result;
+  const first = strikerSide(0);
+  const other: Side = first === "host" ? "guest" : "host";
+  return strikerWon(goals(shotsOf(first))) ? first : other;
+}
+
+function finishOnline(result: Side | "done") {
+  if (!net) return;
+  net.over = true;
+  engine.holdShot = false;
+  const duel = settings().format === "duel";
+  const win = onlineWinnerSide(result);
+  const lose: Side = win === "host" ? "guest" : "host";
+  // Who celebrates: the winning striker (or, in a duel won in goal, the keeper)
+  const winnerKeeps = duel && win !== strikerSide(0);
+  const winner: Celebrant = { player: winnerKeeps ? picksOf(win).keeper : picksOf(win).taker, keeper: winnerKeeps };
+  const loser: Celebrant = { player: winnerKeeps ? picksOf(lose).taker : picksOf(lose).keeper, keeper: !winnerKeeps };
+  const matchId = net.matchId;
+  const run = (id: string) => {
+    if (!net || net.matchId !== matchId) return;
+    playCelebration(winner, loser, id, () => endOnline(result));
+  };
+  if (win === mySide()) {
+    pickCelebration("You win", (id) => {
+      net?.room.setPresence({ cel: { m: matchId, id } });
+      run(id);
+    });
+  } else {
+    // Wait for the winner's choice (or pick for them if it doesn't arrive)
+    showBanner(`${oppName()} wins!`, false);
+    $("#hint").textContent = `${oppName()} is choosing a celebration…`;
+    $("#meters").hidden = true;
+    $("#shuffle").hidden = true;
+    let started = false;
+    const go = (id: string) => {
+      if (started) return;
+      started = true;
+      net && (net.waitCel = null);
+      $("#hint").textContent = "";
+      run(id);
+    };
+    net.waitCel = go;
+    const o = opp();
+    if (o.cel?.m === matchId) go(o.cel.id);
+    window.setTimeout(() => go(cpuCelebration()), 15000);
+  }
+}
+
 function endOnline(result: Side | "done") {
   if (!net) return;
   net.over = true;
   engine.holdShot = false;
+  achieve("online");
   sfx.stopAmbience();
   const duel = settings().format === "duel";
   const iShoot = strikerSide(0) === mySide();
@@ -965,18 +1310,16 @@ function endOnline(result: Side | "done") {
   if (duel) {
     const scored = goals(iShoot ? me : them);
     score = `${scored} / 5`;
-    if (iShoot) {
-      title = scored >= 3 ? "STRIKER WINS!" : "KEEPER WINS!";
-      line = `You scored ${scored} of 5 against ${oppName()}.`;
-    } else {
-      title = scored >= 3 ? "STRIKER WINS!" : "KEEPER WINS!";
-      line = `You kept out ${5 - scored} of 5 from ${oppName()}.`;
-    }
+    title = strikerWon(scored) ? "STRIKER WINS!" : "KEEPER WINS!";
+    if (iShoot) line = `You scored ${scored} of 5 against ${oppName()}. The striker needs 4.`;
+    else line = `You kept out ${5 - scored} of 5 from ${oppName()}. The keeper needs 2.`;
+    shareText = iShoot ? `I scored ${scored} of 5 penalties against ${oppName()} online.` : `I kept out ${5 - scored} of 5 penalties from ${oppName()} online.`;
   } else {
     const won = result === mySide();
     title = won ? "SHOOTOUT WINNER!" : `${oppName()} wins`;
     score = `${goals(me)} – ${goals(them)}`;
     line = me.length > 5 ? (won ? "Won in sudden death." : "Lost in sudden death.") : won ? "Southwestern bragging rights are yours." : "Rematch?";
+    shareText = `I ${won ? "beat" : "lost to"} ${oppName()} ${goals(me)}–${goals(them)} in an online shootout.`;
     if (won) sfx.crowd("cheer", true);
   }
   $("#end-kicker").textContent = `Online · vs ${oppName()}`;
@@ -984,6 +1327,7 @@ function endOnline(result: Side | "done") {
   $("#end-score").textContent = score;
   $("#end-line").textContent = line;
   $("#end-stats").innerHTML = "";
+  showAward(net.kicks, onlineWinnerSide(result) === mySide(), false);
   const rematch = $("#rematch") as HTMLButtonElement;
   rematch.disabled = !net.host;
   rematch.textContent = net.host ? "Rematch" : "Waiting for host…";

@@ -114,10 +114,10 @@ export function celebrationPose(id: string, e: number): Pose {
     case "crossed": {
       // Stop dead, arms folded, chin up
       const u = smooth(e / 0.5);
-      p.armL.x = -1.45 * u;
-      p.armR.x = -1.45 * u;
-      p.armL.z = -0.75 * u;
-      p.armR.z = 0.75 * u;
+      p.armL.x = -1.0 * u;
+      p.armR.x = -1.0 * u;
+      p.armL.z = -0.62 * u;
+      p.armR.z = 0.62 * u;
       p.armL.y = 0.4 * u;
       p.armR.y = -0.4 * u;
       p.body.pitch = -0.1 * u;
@@ -185,8 +185,8 @@ export function celebrationPose(id: string, e: number): Pose {
     case "heart": {
       // Hands make a heart in front of the chest, a little sway
       const u = smooth(e / 0.5);
-      p.armL.x = -1.65 * u;
-      p.armR.x = -1.65 * u;
+      p.armL.x = -1.15 * u;
+      p.armR.x = -1.15 * u;
       p.armL.z = -0.5 * u;
       p.armR.z = 0.5 * u;
       p.body.roll = Math.sin(e * 2.5) * 0.05;
@@ -254,5 +254,26 @@ export function celebrationPose(id: string, e: number): Pose {
       break;
     }
   }
+  return p;
+}
+
+/** The beaten player: down on the knees near the goal, hands on the head. */
+export function loserPose(e: number): Pose {
+  const p = restPose();
+  p.root.x = -2.6;
+  p.root.z = 2.4;
+  p.root.yaw = 0.5;
+  const u = smooth(e / 0.8);
+  p.body.lift = -0.5 * u;
+  p.kneeL = 1.55 * u;
+  p.kneeR = 1.55 * u;
+  p.legL.x = 0.05;
+  p.legR.x = 0.05;
+  p.body.pitch = 0.2 * u;
+  p.armL.x = -2.6 * u;
+  p.armR.x = -2.6 * u;
+  p.armL.z = 0.9 * u;
+  p.armR.z = -0.9 * u;
+  p.head.x = (0.35 + Math.sin(e * 1.3) * 0.08) * u;
   return p;
 }

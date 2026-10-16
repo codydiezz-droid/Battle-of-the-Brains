@@ -169,6 +169,26 @@ export const tiles: Record<string, Tile> = {
       }
     },
   },
+  thrivent: {
+    bg: "#ffffff",
+    draw(g, w, h) {
+      // Purple wordmark with a small rising arc above the name
+      const size = fit(g, "Thrivent", w * 0.78, h * 0.5, 700);
+      g.font = `700 ${size}px Arial, Helvetica, sans-serif`;
+      g.textAlign = "center";
+      g.textBaseline = "middle";
+      g.fillStyle = "#4b2a85";
+      g.fillText("Thrivent", w / 2, h * 0.56);
+      const tw = g.measureText("Thrivent").width;
+      g.strokeStyle = "#8a5cd8";
+      g.lineWidth = h * 0.05;
+      g.lineCap = "round";
+      g.beginPath();
+      g.moveTo(w / 2 - tw * 0.42, h * 0.24);
+      g.quadraticCurveTo(w / 2, h * 0.06, w / 2 + tw * 0.42, h * 0.2);
+      g.stroke();
+    },
+  },
   oneBridge: {
     bg: "#091d3f",
     draw(g, w, h) {
@@ -223,7 +243,7 @@ export const tiles: Record<string, Tile> = {
 };
 
 /** The order sponsors appear along a board. */
-export const boardOrder = ["homeDepot", "oneBridge", "crowdStrike", "southwestern", "dell", "botb", "ebay", "pirates"];
+export const boardOrder = ["homeDepot", "oneBridge", "crowdStrike", "southwestern", "dell", "botb", "thrivent", "ebay", "pirates"];
 
 /** One long strip of sponsor tiles, for LED boards and the stand fascia. */
 export function sponsorStrip(tileW: number, tileH: number, order = boardOrder) {

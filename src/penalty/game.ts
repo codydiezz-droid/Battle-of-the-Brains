@@ -19,6 +19,7 @@ import { DIFF, KeeperBrain, ShooterBrain, gauss, keeperDiveTime, keeperMaxLat, t
 import { RUNUP, keeperPose, newKeeper, newShooter, shooterPose, type KeeperState, type ShooterState } from "./anim";
 import * as sfx from "./audio";
 import { Avatar, type Pose } from "./avatar";
+import { CELEBRATION_SECONDS, celebrationPose, loserPose } from "./celebrations";
 import { BALL_R, STEP, newBall, solveShot, stepBall, type Ball, type BallEvent, type Sphere } from "./physics";
 import type { Player } from "./players";
 import { GOAL_H, GOAL_HALF, SPOT_Z, buildStadium } from "./stadium";
@@ -66,7 +67,7 @@ export interface KickResult {
   speed: number;
 }
 
-type Phase = "idle" | "aim" | "ready" | "runup" | "flight" | "result" | "replay";
+type Phase = "idle" | "aim" | "ready" | "runup" | "flight" | "result" | "replay" | "celebrate";
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 
@@ -250,6 +251,7 @@ export class Engine {
 
   startKick(role: Role, online = false) {
     if (!this.shooterAv || !this.keeperAv) return;
+    this.endCelebration(false);
     this.role = role;
     this.online = online;
     this.pendingShot = null;
@@ -451,7 +453,7 @@ export class Engine {
       if (e.repeat && k === " ") return;
       this.keys.add(k);
       if (k === " " || k === "enter") {
-        if (this.phase === "result" || this.phase === "replay") this.skip();
+        if (this.phase === "result" || this.phase === "replay" || this.phase === "celebrate") this.skip();
         else if (this.role === "shoot") this.startCharge();
         else this.playerDive();
       }
@@ -464,7 +466,7 @@ export class Engine {
     window.addEventListener("keyup", (e) => {
       const k = e.key.toLowerCase();
       this.keys.delete(k);
-      if ((k === " " || k === "enter") && this.role === "shoot") this.release();
+      if ((k === " " || k === "enter") && this.role === "shoot" && this.phase === "aim") this.release();
     });
     window.addEventListener("blur", () => {
       this.keys.clear();
@@ -479,7 +481,7 @@ export class Engine {
       c.setPointerCapture?.(e.pointerId);
       this.setMouse(e);
       this.mouseActive = true;
-      if (this.phase === "result" || this.phase === "replay") return this.skip();
+      if (this.phase === "result" || this.phase === "replay" || this.phase === "celebrate") return this.skip();
       if (this.role === "shoot") {
         this.updateAimFromMouse();
         this.startCharge();
@@ -543,6 +545,10 @@ export class Engine {
   }
 
   skip() {
+    if (this.phase === "celebrate") {
+      if (this.simT - this.phaseT > 1.2) this.endCelebration();
+      return;
+    }
     if (this.phase === "replay") {
       this.finishReplay();
       return;
@@ -569,6 +575,7 @@ export class Engine {
 
   private update(dt: number, realDt: number) {
     if (this.phase === "replay") return this.updateReplay(realDt);
+    if (this.phase === "celebrate") return this.updateCelebration(dt);
     const prevT = this.simT;
     this.simT += dt;
     const t = this.simT;
@@ -855,6 +862,63 @@ export class Engine {
     this.finish();
   }
 
+  /* ───────────────────────────── Celebration ───────────────────────────── */
+
+  private celeb: { winner: Avatar; loser: Avatar; id: string; done: () => void } | null = null;
+
+  /**
+   * The match winner's celebration, in front of the goal, with the beaten
+   * player on their knees behind. `wasKeeper` dresses each in the kit they wore.
+   */
+  celebrate(winner: Player, winnerKeeper: boolean, loser: Player, loserKeeper: boolean, id: string, done: () => void) {
+    this.endCelebration(false);
+    const w = new Avatar(winner, winnerKeeper);
+    const l = new Avatar(loser, loserKeeper);
+    this.stadium.scene.add(w.root, l.root);
+    if (this.shooterAv) this.shooterAv.root.visible = false;
+    if (this.keeperAv) this.keeperAv.root.visible = false;
+    this.ballMesh.visible = false;
+    this.celeb = { winner: w, loser: l, id, done };
+    this.cheer = 1;
+    sfx.crowd("cheer");
+    this.setPhase("celebrate");
+    const p = celebrationPose(id, 0).root;
+    this.camPos.set(p.x + 1.8, 1.8, p.z + 5.4);
+    this.camLook.set(p.x, 1.0, p.z);
+    this.onHint("Tap or press Space to skip");
+  }
+
+  private updateCelebration(dt: number) {
+    this.simT += dt;
+    const c = this.celeb;
+    if (!c) return;
+    const e = this.simT - this.phaseT;
+    c.winner.pose = celebrationPose(c.id, e);
+    c.loser.pose = loserPose(e);
+    c.winner.apply();
+    c.loser.apply();
+    this.cheer = Math.max(this.cheer, 0.8);
+    if (e > CELEBRATION_SECONDS) this.endCelebration();
+  }
+
+  /** Stop a celebration without its callback (leaving the match). */
+  cancelCelebration() {
+    this.endCelebration(false);
+  }
+
+  private endCelebration(notify = true) {
+    const c = this.celeb;
+    if (!c) return;
+    this.celeb = null;
+    this.stadium.scene.remove(c.winner.root, c.loser.root);
+    if (this.shooterAv) this.shooterAv.root.visible = true;
+    if (this.keeperAv) this.keeperAv.root.visible = true;
+    this.ballMesh.visible = true;
+    this.setPhase("idle");
+    this.onHint("");
+    if (notify) c.done();
+  }
+
   /* ───────────────────────────── Render ───────────────────────────── */
 
   private camPos = new Vector3(1.6, 2.2, SPOT_Z + 6.5);
@@ -908,6 +972,22 @@ export class Engine {
     const b = this.ball.p;
     const pos = new Vector3();
     const look = new Vector3();
+    if (this.phase === "celebrate" && this.celeb) {
+      // In front of the winner, following them round, the goal and crowd behind
+      const r = this.celeb.winner.pose.root;
+      pos.set(r.x * 0.5 + 1.8, 1.75, r.z + 5.4);
+      look.set(r.x * 0.7, 1.0, r.z - 0.5);
+      this.camPos.lerp(pos, 0.06);
+      this.camLook.lerp(look, 0.08);
+      this.camera.position.copy(this.camPos);
+      this.camera.lookAt(this.camLook);
+      if (Math.abs(this.camera.fov - this.baseFov) > 0.05) {
+        this.camera.fov = this.baseFov;
+        this.camera.updateProjectionMatrix();
+      }
+      this.stadium.setNetOpacity(0.55);
+      return;
+    }
     if (this.phase === "replay") {
       // Low side angle at the goalmouth
       const k = (this.replayClock - this.replayFrom) * 0.4;

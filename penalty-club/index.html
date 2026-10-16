@@ -31,6 +31,14 @@
           <p class="kicker">Southwestern University · HSI Battle of the Brains 2026</p>
           <h1 id="menu-h">OneBridge Penalty Club</h1>
 
+          <div class="profile">
+            <span class="lvl" id="profile-level">Lv 1</span>
+            <span class="xpbar" aria-hidden="true"><span class="xpfill" id="profile-fill"></span></span>
+            <span class="profile-xp" id="profile-xp">0 / 100 XP</span>
+            <span class="streak" id="profile-streak" hidden></span>
+            <button type="button" id="open-trophies" class="link-btn">Trophies</button>
+          </div>
+
           <fieldset class="difficulty">
             <legend>Difficulty</legend>
             <label><input type="radio" name="diff" value="easy" /> <span>Easy</span></label>
@@ -41,12 +49,12 @@
           <div class="modes">
             <button type="button" class="mode" data-mode="challenge" data-autofocus>
               <span class="mode-title">Penalty Challenge</span>
-              <span class="mode-sub">Take five penalties against the keeper.</span>
+              <span class="mode-sub">Take five penalties. Score 4 to beat the keeper.</span>
               <span class="mode-best" data-best="challenge"></span>
             </button>
             <button type="button" class="mode" data-mode="keeper">
               <span class="mode-title">Goalkeeper Challenge</span>
-              <span class="mode-sub">Face five penalties. Read the striker.</span>
+              <span class="mode-sub">Face five penalties. Keep out 2 to win.</span>
               <span class="mode-best" data-best="keeper"></span>
             </button>
             <button type="button" class="mode mode-feature" data-mode="shootout">
@@ -57,7 +65,7 @@
             <button type="button" class="mode mode-online" id="open-online">
               <span class="mode-title">Play online <span class="live-dot" aria-hidden="true"></span></span>
               <span class="mode-sub">Two players, live: one shoots, one keeps goal. Share a game code with a friend.</span>
-              <span class="mode-best">Striker vs keeper, or a full shootout</span>
+              <span class="mode-best">Striker vs keeper (4 goals or 2 stops wins), or a full shootout</span>
             </button>
             <button type="button" class="mode" data-mode="practice">
               <span class="mode-title">Practice</span>
@@ -71,6 +79,30 @@
             <button type="button" id="menu-tutorial" class="link-btn">Show the tutorial again</button>
             <a class="back" data-site-link href="../">← Back to the Southwestern team site</a>
           </div>
+        </div>
+      </section>
+
+      <!-- Trophy room: achievements and celebrations -->
+      <section id="trophies" class="screen screen-center" aria-labelledby="trophies-h" hidden>
+        <div class="panel trophy-panel">
+          <p class="kicker" id="trophies-kicker"></p>
+          <h2 id="trophies-h">Trophy room</h2>
+          <h3>Celebrations</h3>
+          <p class="lede">Win a match to celebrate. Level up to unlock more.</p>
+          <ul class="cel-list" id="trophy-cels"></ul>
+          <h3>Achievements</h3>
+          <ul class="ach-list" id="trophy-achs"></ul>
+          <button type="button" id="trophies-back" class="btn btn-quiet" data-autofocus>Back</button>
+        </div>
+      </section>
+
+      <!-- Winner picks a celebration -->
+      <section id="celebrate" class="screen screen-center" aria-labelledby="celebrate-h" hidden>
+        <div class="panel celebrate-panel">
+          <p class="kicker" id="celebrate-kicker">You win</p>
+          <h2 id="celebrate-h">Pick your celebration</h2>
+          <div class="cel-grid" id="cel-grid"></div>
+          <p class="cel-timer" id="cel-timer" aria-live="off"></p>
         </div>
       </section>
 
@@ -232,14 +264,23 @@
           <p class="end-score" id="end-score"></p>
           <p class="end-line" id="end-line"></p>
           <dl class="end-stats" id="end-stats"></dl>
+          <div class="end-xp" id="end-xp" hidden>
+            <div class="end-xp-head"><span class="lvl" id="end-level">Lv 1</span><span id="end-gained">+0 XP</span></div>
+            <span class="xpbar" aria-hidden="true"><span class="xpfill" id="end-fill"></span></span>
+            <ul class="end-xp-lines" id="end-xp-lines"></ul>
+            <p class="end-unlocks" id="end-unlocks" hidden></p>
+          </div>
           <div class="end-actions">
             <button type="button" id="rematch" class="btn" data-autofocus>Rematch</button>
+            <button type="button" id="share" class="btn btn-quiet">Share result</button>
             <button type="button" id="to-lobby" class="btn btn-quiet" hidden>Back to lobby</button>
             <button type="button" id="end-menu" class="btn btn-quiet">Main menu</button>
           </div>
           <a class="back" data-site-link href="../">← Back to the Southwestern team site</a>
         </div>
       </section>
+
+      <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
       <noscript><p class="noscript">This game needs JavaScript.</p></noscript>
     </main>

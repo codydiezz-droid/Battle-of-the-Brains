@@ -18,6 +18,11 @@ export interface Save {
   };
   shootout: { wins: number; losses: number };
   totals: { shots: number; goals: number; faced: number; saves: number; perfect: number };
+  xp: number;
+  achievements: string[];
+  /** The celebration picked last time, offered first. */
+  celebration: string;
+  streak: { last: string; days: number };
 }
 
 const KEY = "onebridge-penalty-club-v2";
@@ -34,6 +39,10 @@ const fresh = (): Save => ({
   best: { challenge: { easy: 0, medium: 0, hard: 0 }, keeper: { easy: 0, medium: 0, hard: 0 } },
   shootout: { wins: 0, losses: 0 },
   totals: { shots: 0, goals: 0, faced: 0, saves: 0, perfect: 0 },
+  xp: 0,
+  achievements: [],
+  celebration: "siu",
+  streak: { last: "", days: 0 },
 });
 
 function load(): Save {
@@ -52,6 +61,9 @@ function load(): Save {
       },
       shootout: { ...base.shootout, ...data.shootout },
       totals: { ...base.totals, ...data.totals },
+      xp: Number.isFinite(data.xp) ? data.xp : 0,
+      achievements: Array.isArray(data.achievements) ? data.achievements.filter((a: unknown) => typeof a === "string") : [],
+      streak: { ...base.streak, ...data.streak },
     };
   } catch {
     return fresh();

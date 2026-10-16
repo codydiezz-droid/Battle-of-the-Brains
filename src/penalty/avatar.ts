@@ -19,6 +19,7 @@ import {
   legTexture,
   shade,
   sideTexture,
+  sockTexture,
   topTexture,
   torsoBack,
   torsoFront,
@@ -193,7 +194,8 @@ export class Avatar {
       leg.add(thigh);
       knee.position.y = -0.46;
       leg.add(knee);
-      const shin = box(0.2, 0.36, 0.2, flat(k.socks));
+      const sockMat = mat(sockTexture(k));
+      const shin = box(0.2, 0.36, 0.2, [sockMat, sockMat, flat(k.socks), flat(k.socks), sockMat, sockMat]);
       shin.position.y = -0.18;
       knee.add(shin);
       const boot = box(0.22, 0.1, 0.32, flat("#14171d"));
