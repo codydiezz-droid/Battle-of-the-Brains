@@ -31,11 +31,26 @@ Built with React, Vite and TypeScript, plain CSS, three.js for the hero animatio
 
 ### The mini game: OneBridge Penalty Club
 
-A separate page at `/penalty-club/` (source in `penalty-club/index.html` and `src/penalty/`): a five-kick
-penalty shootout where you take the penalties or go in goal as any of the ten. Students wear their home
-country's shirt and the coaches wear a Southwestern Pirates shirt, all drawn in code with no real crests. Faces
-come from the portraits in `public/images`. Every player has the same total of stats, just spread differently
-(`src/penalty/players.ts`). It is plain TypeScript on a 2D canvas, with sounds synthesized in the browser.
+A separate page at `/penalty-club/`: a 3D penalty shootout built with three.js. Source in
+`penalty-club/index.html` and `src/penalty/`.
+
+- **Players:** the seven students and three coaches as blocky (Roblox / Minecraft style) characters. Their
+  faces, skin tone, hair and glasses are drawn as pixel art to match their portraits (`src/penalty/players.ts`,
+  `textures.ts`, `avatar.ts`). Students wear their home country's shirt, coaches the Southwestern Pirates shirt,
+  all drawn in code with no real crests. Every player has the same stat total, spread differently.
+- **Modes:** Penalty Challenge (5 shots), Goalkeeper Challenge (5 saves), Full Shootout (alternating, five
+  each, early finish when one side cannot catch up, then sudden death) and Practice.
+- **Shooting:** aim with the mouse or arrows, hold Space or the mouse button to charge, release to strike,
+  Q / E to curve. The gold zone gives the cleanest strike; overpowered shots spray and rise.
+- **Goalkeeping:** A / D to step across, arrows or mouse to pick the dive (Up for high), Space or click to
+  dive. Diving early lets the striker go the other way; the striker's hips hint at the side (with
+  disguises on harder levels).
+- **Fair AI:** the keeper only reacts to the ball once it is struck and cannot see the curve; on Medium and
+  Hard it learns a side you keep using. The striker only reacts to what your keeper has visibly done.
+- **Physics** (`physics.ts`): gravity, drag and sidespin at a fixed 240 Hz, with posts, crossbar, net and
+  the keeper's hands, head, body and legs as collision shapes, so results follow from what happened.
+- **Extras:** slow motion and replays for golazos and great saves, synthesized sounds, records and settings
+  saved in the browser, a first-match tutorial, pause, and touch controls.
 
 ---
 

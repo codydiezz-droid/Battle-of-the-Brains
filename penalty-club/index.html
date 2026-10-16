@@ -6,115 +6,182 @@
     <title>OneBridge Penalty Club</title>
     <meta
       name="description"
-      content="A penalty shootout mini game starring the seven Southwestern University students and three coaches who built OneBridge at the 2026 HSI Battle of the Brains."
+      content="A 3D penalty shootout starring the seven Southwestern University students and three coaches who built OneBridge at the 2026 HSI Battle of the Brains."
     />
     <meta name="theme-color" content="#050f24" />
     <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
   </head>
   <body data-site-url="../">
     <main>
-    <canvas id="pitch" tabindex="-1" role="img" aria-label="A football pitch at night, seen from the penalty spot, with a goalkeeper in goal."></canvas>
+      <canvas id="pitch" tabindex="-1" role="img" aria-label="A 3D football stadium at night, with a penalty taker and a goalkeeper."></canvas>
 
-    <!-- Title -->
-    <section id="title" class="screen screen-center" aria-labelledby="title-h">
-      <div class="panel title-panel">
-        <svg class="mark" viewBox="0 0 64 24" aria-hidden="true">
-          <defs>
-            <linearGradient id="pc-arc" x1="0" x2="1">
-              <stop offset="0" stop-color="#3d8bff" />
-              <stop offset="0.5" stop-color="#dfe9ff" />
-              <stop offset="1" stop-color="#f68835" />
-            </linearGradient>
-          </defs>
-          <path d="M4 21 C 18 2, 46 2, 60 21" fill="none" stroke="url(#pc-arc)" stroke-width="4" stroke-linecap="round" />
-        </svg>
-        <p class="kicker">Southwestern University · HSI Battle of the Brains 2026</p>
-        <h1 id="title-h">OneBridge Penalty Club</h1>
-        <p class="lede">Seven students, three coaches, five penalties. Pick a side of the ball.</p>
-        <div class="choices">
-          <button type="button" class="choice" data-role="striker" data-autofocus>
-            <span class="choice-title">Take the penalties</span>
-            <span class="choice-sub">Aim, time your strike, beat the keeper.</span>
-          </button>
-          <button type="button" class="choice" data-role="keeper">
-            <span class="choice-title">Go in goal</span>
-            <span class="choice-sub">Read the striker and dive the right way.</span>
-          </button>
-        </div>
-        <details class="how">
-          <summary>How to play</summary>
-          <p><strong>Striker:</strong> move to aim at the goal and tap (or press Space) to lock it. A power bar starts moving: tap again when the marker is in the gold zone. Too hard and it flies over.</p>
-          <p><strong>Keeper:</strong> tap where you think the ball is going. Tap after the kick to react, or guess early and risk being read. Keys: arrows for low corners and the middle, Q and E for top corners.</p>
-        </details>
-        <a class="back" data-site-link href="../">← Back to the Southwestern team site</a>
-      </div>
-    </section>
+      <!-- Main menu -->
+      <section id="menu" class="screen screen-center" aria-labelledby="menu-h">
+        <div class="panel menu-panel">
+          <svg class="mark" viewBox="0 0 64 24" aria-hidden="true">
+            <defs>
+              <linearGradient id="pc-arc" x1="0" x2="1">
+                <stop offset="0" stop-color="#3d8bff" />
+                <stop offset="0.5" stop-color="#dfe9ff" />
+                <stop offset="1" stop-color="#f68835" />
+              </linearGradient>
+            </defs>
+            <path d="M4 21 C 18 2, 46 2, 60 21" fill="none" stroke="url(#pc-arc)" stroke-width="4" stroke-linecap="round" />
+          </svg>
+          <p class="kicker">Southwestern University · HSI Battle of the Brains 2026</p>
+          <h1 id="menu-h">OneBridge Penalty Club</h1>
 
-    <!-- Player select -->
-    <section id="select" class="screen" aria-labelledby="select-title" hidden>
-      <div class="select-inner">
-        <div class="select-head">
-          <button type="button" id="back-title" class="link-btn">← Back</button>
-          <h2 id="select-title">Pick your penalty taker</h2>
-          <p class="select-sub">Students wear their home country’s shirt. Coaches wear the Southwestern Pirates shirt.</p>
-        </div>
-        <div id="players" class="cards"></div>
-        <div class="select-foot">
-          <p class="opp">
-            <span id="opp-role">In goal</span>: <strong id="opp-name"></strong>
-            <button type="button" id="shuffle" class="link-btn">Shuffle</button>
-          </p>
-          <button type="button" id="kickoff" class="btn">Kick off</button>
-        </div>
-      </div>
-    </section>
+          <fieldset class="difficulty">
+            <legend>Difficulty</legend>
+            <label><input type="radio" name="diff" value="easy" /> <span>Easy</span></label>
+            <label><input type="radio" name="diff" value="medium" /> <span>Medium</span></label>
+            <label><input type="radio" name="diff" value="hard" /> <span>Hard</span></label>
+          </fieldset>
 
-    <!-- In-game HUD -->
-    <section id="hud" class="screen hud" aria-label="Match" hidden>
-      <div class="hud-top">
-        <div class="hud-card" id="hud-you">
-          <img alt="" width="44" height="44" />
-          <span><span class="hud-name"></span><span class="hud-role"></span></span>
-        </div>
-        <div class="hud-score">
-          <span id="round"></span>
-          <span id="dots" class="dots"></span>
-        </div>
-        <div class="hud-card hud-card-right" id="hud-opp">
-          <img alt="" width="44" height="44" />
-          <span><span class="hud-name"></span><span class="hud-role"></span></span>
-        </div>
-      </div>
-      <div id="banner" class="banner" hidden></div>
-      <div class="hud-bottom">
-        <div id="power" class="power" hidden aria-hidden="true">
-          <span class="power-sweet"></span>
-          <span id="power-marker" class="power-marker"></span>
-        </div>
-        <p id="hint" class="hint"></p>
-        <div class="hud-tools">
-          <button type="button" id="mute" class="tool">Sound on</button>
-          <button type="button" id="quit" class="tool">Quit</button>
-        </div>
-      </div>
-      <p id="live" class="sr-only" aria-live="polite"></p>
-    </section>
+          <div class="modes">
+            <button type="button" class="mode" data-mode="challenge" data-autofocus>
+              <span class="mode-title">Penalty Challenge</span>
+              <span class="mode-sub">Take five penalties against the keeper.</span>
+              <span class="mode-best" data-best="challenge"></span>
+            </button>
+            <button type="button" class="mode" data-mode="keeper">
+              <span class="mode-title">Goalkeeper Challenge</span>
+              <span class="mode-sub">Face five penalties. Read the striker.</span>
+              <span class="mode-best" data-best="keeper"></span>
+            </button>
+            <button type="button" class="mode mode-feature" data-mode="shootout">
+              <span class="mode-title">Full Shootout</span>
+              <span class="mode-sub">Take a kick, then save one. Five each, then sudden death.</span>
+              <span class="mode-best" data-best="shootout"></span>
+            </button>
+            <button type="button" class="mode" data-mode="practice">
+              <span class="mode-title">Practice</span>
+              <span class="mode-sub">Unlimited kicks. Switch between striker and keeper.</span>
+              <span class="mode-best" data-best="practice"></span>
+            </button>
+          </div>
 
-    <!-- End -->
-    <section id="end" class="screen screen-center" aria-labelledby="end-line" hidden>
-      <div class="panel end-panel">
-        <p class="kicker" id="end-who"></p>
-        <p class="end-score"><span id="end-score"></span> <span id="end-label" class="end-label"></span></p>
-        <h2 id="end-line"></h2>
-        <div class="end-actions">
-          <button type="button" id="again" class="btn" data-autofocus>Play again</button>
-          <button type="button" id="switch" class="btn btn-quiet">Switch sides</button>
-          <button type="button" id="change" class="btn btn-quiet">Change player</button>
+          <div class="menu-foot">
+            <button type="button" id="menu-sound" class="link-btn" aria-pressed="false">Sound on</button>
+            <button type="button" id="menu-tutorial" class="link-btn">Show the tutorial again</button>
+            <a class="back" data-site-link href="../">← Back to the Southwestern team site</a>
+          </div>
         </div>
-        <a class="back" data-site-link href="../">← Back to the Southwestern team site</a>
-      </div>
-    </section>
+      </section>
 
+      <!-- Player select -->
+      <section id="select" class="screen" aria-labelledby="select-title" hidden>
+        <div class="select-inner">
+          <div class="select-head">
+            <button type="button" id="select-back" class="link-btn">← Menu</button>
+            <h2 id="select-title">Pick your players</h2>
+            <p class="select-sub">Students wear their home country’s shirt. Coaches wear the Southwestern Pirates shirt.</p>
+            <div class="tabs" role="tablist" aria-label="Role">
+              <button type="button" role="tab" id="tab-shoot" data-tab="shoot" aria-selected="true">Penalty taker</button>
+              <button type="button" role="tab" id="tab-keep" data-tab="keep" aria-selected="false">Goalkeeper</button>
+            </div>
+          </div>
+          <div id="cards" class="cards" role="tabpanel"></div>
+          <div class="select-foot">
+            <p class="picked" id="picked"></p>
+            <button type="button" id="kickoff" class="btn">Kick off</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- In-game HUD -->
+      <section id="hud" class="screen hud" aria-label="Match" hidden>
+        <div class="hud-top">
+          <div class="board">
+            <div class="team team-you">
+              <span class="team-name">You</span>
+              <span class="team-dots" id="dots-you"></span>
+            </div>
+            <div class="board-mid">
+              <span class="score" id="score">0 – 0</span>
+              <span class="board-status" id="status"></span>
+            </div>
+            <div class="team team-cpu" id="team-cpu">
+              <span class="team-name">CPU</span>
+              <span class="team-dots" id="dots-cpu"></span>
+            </div>
+          </div>
+          <div class="hud-tools">
+            <button type="button" id="practice-switch" class="tool" hidden>Switch to keeper</button>
+            <button type="button" id="sound" class="tool" aria-pressed="false">Sound on</button>
+            <button type="button" id="pause" class="tool">Pause</button>
+          </div>
+        </div>
+
+        <div class="matchup" id="matchup">
+          <span class="who" id="who-shoot"></span>
+          <span class="vs">vs</span>
+          <span class="who" id="who-keep"></span>
+        </div>
+
+        <div id="banner" class="banner" hidden></div>
+
+        <aside id="coach" class="coach" hidden aria-live="polite">
+          <p class="coach-title" id="coach-title">How to shoot</p>
+          <ol id="coach-steps"></ol>
+          <button type="button" id="coach-skip" class="link-btn">Skip tutorial</button>
+        </aside>
+
+        <div class="hud-bottom">
+          <p id="hint" class="hint"></p>
+        </div>
+
+        <div class="meters" id="meters" hidden>
+          <div class="power" aria-hidden="true">
+            <span class="power-fill" id="power-fill"></span>
+            <span class="power-sweet"></span>
+            <span class="power-over" id="power-over"></span>
+          </div>
+          <div class="curve">
+            <button type="button" class="curve-btn" id="curve-left" aria-label="Curve left (Q)">◀</button>
+            <span class="curve-track" aria-hidden="true"><span class="curve-dot" id="curve-dot"></span></span>
+            <button type="button" class="curve-btn" id="curve-right" aria-label="Curve right (E)">▶</button>
+          </div>
+          <span class="meter-label">Power · Curve (Q / E)</span>
+        </div>
+
+        <div class="shuffle" id="shuffle" hidden>
+          <button type="button" class="curve-btn" id="shuffle-left" aria-label="Step left">◀</button>
+          <span class="meter-label">Step</span>
+          <button type="button" class="curve-btn" id="shuffle-right" aria-label="Step right">▶</button>
+        </div>
+        <p id="live" class="sr-only" aria-live="polite"></p>
+      </section>
+
+      <!-- Pause -->
+      <section id="paused" class="screen screen-center" aria-labelledby="paused-h" hidden>
+        <div class="panel small-panel">
+          <h2 id="paused-h">Paused</h2>
+          <div class="end-actions">
+            <button type="button" id="resume" class="btn" data-autofocus>Resume</button>
+            <button type="button" id="restart" class="btn btn-quiet">Restart</button>
+            <button type="button" id="to-menu" class="btn btn-quiet">Main menu</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Results -->
+      <section id="end" class="screen screen-center" aria-labelledby="end-title" hidden>
+        <div class="panel end-panel">
+          <p class="kicker" id="end-kicker"></p>
+          <h2 id="end-title"></h2>
+          <p class="end-score" id="end-score"></p>
+          <p class="end-line" id="end-line"></p>
+          <dl class="end-stats" id="end-stats"></dl>
+          <div class="end-actions">
+            <button type="button" id="rematch" class="btn" data-autofocus>Rematch</button>
+            <button type="button" id="end-menu" class="btn btn-quiet">Main menu</button>
+          </div>
+          <a class="back" data-site-link href="../">← Back to the Southwestern team site</a>
+        </div>
+      </section>
+
+      <noscript><p class="noscript">This game needs JavaScript.</p></noscript>
     </main>
     <script type="module" src="/src/penalty/main.ts"></script>
   </body>
