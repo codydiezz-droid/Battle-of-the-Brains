@@ -56,13 +56,6 @@ export const groupPhoto: Photo = {
   caption: "The Southwestern team and coaches at the 2026 HSI Battle of the Brains.",
 };
 
-export const finalistsGraphic = {
-  src: "/images/2026-finalists.webp",
-  width: 820,
-  height: 1180,
-  alt: "The official “Meet your 2026 finalists” graphic from HSI Battle of the Brains, which includes Southwestern University.",
-};
-
 /* ─────────────────────────── Written copy ─────────────────────────── */
 
 export const coachesIntro =
