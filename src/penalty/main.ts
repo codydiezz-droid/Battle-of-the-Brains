@@ -1113,6 +1113,7 @@ function onPeers(peers: NetPeer[]) {
   if (!net) return;
   const had = !!net.opp;
   net.opp = peers.find((p) => !p.isMe && p.presence.app === "pc") ?? null;
+  if (!had && net.opp) (window as unknown as { __pcNetLog?: string[] }).__pcNetLog?.push(`${Math.round(performance.now())} lobby shows friend`);
   if (had !== !!net.opp) syncTransport();
   // The other player left
   if (had && !net.opp && net.matchId && !net.over) {
@@ -1540,6 +1541,7 @@ $("#lobby-invite").addEventListener("click", async () => {
 engine.setCast(byId(save.shooterId), byId(save.keeperId));
 syncMenu();
 show("menu");
+(window as unknown as { __pcNetLog?: string[] }).__pcNetLog?.push(`${Math.round(performance.now())} page ready`);
 
 // Fetch the online code in the background, so joining a game is quick
 (window.requestIdleCallback ?? ((fn: () => void) => window.setTimeout(fn, 1500)))(() => warmUp());

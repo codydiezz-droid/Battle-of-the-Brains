@@ -19,6 +19,11 @@
 
 export type Presence = Record<string, unknown>;
 
+/** A timeline of connection events (ms since page load), for diagnosing slow joins. */
+export const netLog: string[] = [];
+const mark = (what: string) => netLog.push(`${Math.round(performance.now())} ${what}`);
+(window as unknown as { __pcNetLog: string[] }).__pcNetLog = netLog;
+
 export interface NetPeer {
   id: string;
   isMe: boolean;
@@ -227,6 +232,7 @@ async function relayRoute(code: string, urls: string[]): Promise<Route> {
       return;
     }
     const isNew = !prev;
+    if (isNew) mark("relay heard player");
     others.set(id, { presence: data as Presence, seen: Date.now() });
     listener();
     // A newcomer: answer straight away rather than at the next heartbeat
@@ -378,6 +384,7 @@ function mqttRoute(code: string, urls: string[], selfId: string): Route {
       return;
     }
     const isNew = !prev;
+    if (isNew) mark("mqtt heard player");
     others.set(id, { presence: data as Presence, seen: Date.now() });
     listener();
     // A newcomer: answer straight away rather than at the next heartbeat
@@ -432,6 +439,7 @@ function mqttRoute(code: string, urls: string[], selfId: string): Route {
           const body = all.subarray(j, j + len);
           if (type === 2) {
             // CONNACK: subscribe, then say hello
+            mark(`mqtt connack ${url}`);
             if (body[1] === 0) {
               ws.send(mqttPacket(0x82, [0, 1, ...mqttStr(topic), 0]));
               ready.add(ws);
@@ -569,6 +577,7 @@ function localRoute(code: string): Route {
  * test switch) uses just the same-device channel.
  */
 export async function joinRoom(code: string, localOnly = false): Promise<NetRoom> {
+  mark(`join ${code}`);
   const params = new URLSearchParams(location.search);
   // ?only=mqtt (or relay, nostr, torrent, comma-separated) keeps just those routes, for testing
   const only = params.get("only")?.split(",") ?? null;
@@ -599,6 +608,7 @@ export async function joinRoom(code: string, localOnly = false): Promise<NetRoom
   const add = (r: Route | null) => {
     if (!r) return;
     if (left || (only && !only.includes(r.name))) return r.leave();
+    mark(`route ready ${r.name}`);
     routes.push(r);
     r.onChange(notify);
     r.send(mine);
