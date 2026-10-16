@@ -268,6 +268,7 @@ export class Engine {
     this.pendingShot = null;
     this.remoteResult = null;
     this.waitingRemote = -1;
+    this.saveAt = null;
     this.ball = newBall();
     this.shooter = newShooter();
     this.keeper = newKeeper();
@@ -755,6 +756,7 @@ export class Engine {
     for (const ev of this.events) {
       this.lastEventT = t;
       if (ev === "save") {
+        if (!this.saveAt) this.saveAt = { x: this.ball.p.x, y: this.ball.p.y };
         sfx.glove();
         this.shake = 0.6;
         const speed = this.ballSpeedAtKick();
@@ -776,6 +778,8 @@ export class Engine {
   }
 
   private kickSpeed = 0;
+  /** Where the keeper got to the ball, for judging the save. */
+  private saveAt: { x: number; y: number } | null = null;
   private ballSpeedAtKick() {
     return this.kickSpeed;
   }
@@ -808,7 +812,7 @@ export class Engine {
     const b = this.ball;
     const shooting = this.role === "shoot";
     const speed = this.kickSpeed;
-    let cross = b.crossAt ?? { x: b.p.x, y: b.p.y };
+    let cross = b.crossAt ?? (b.saved ? this.saveAt : null) ?? { x: b.p.x, y: b.p.y };
     let outcome: Outcome;
     if (b.goal) outcome = "goal";
     else if (b.saved) outcome = "save";
