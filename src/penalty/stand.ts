@@ -10,8 +10,11 @@ import {
   MeshLambertMaterial,
   RepeatWrapping,
   SRGBColorSpace,
+  type BufferGeometry,
+  type Material,
   type Scene,
 } from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { sponsorStrip } from "./sponsors";
 
 /*
@@ -47,23 +50,30 @@ export function buildStand(scene: Scene, z: number, yaw: number): Stand {
 
   const concrete = new MeshLambertMaterial({ color: "#3b4252" });
   const concreteDark = new MeshLambertMaterial({ color: "#2a303c" });
-  // Steps
+  const seatA = new MeshLambertMaterial({ color: "#1f2533" });
+  const seatB = new MeshLambertMaterial({ color: "#2b3142" });
+  const railMat = new MeshLambertMaterial({ color: "#d8dee9" });
+  const roofMat = new MeshLambertMaterial({ color: "#121a2a" });
+  const columnMat = new MeshLambertMaterial({ color: "#1a2233" });
+
+  // Plain boxes are batched by material and merged into one mesh each, so the
+  // whole stand structure costs a handful of draw calls instead of ~70
+  const batches = new Map<Material, BufferGeometry[]>();
+  const box = (w: number, h: number, d: number, x: number, y: number, zz: number, m: Material) => {
+    const list = batches.get(m) ?? [];
+    list.push(new BoxGeometry(w, h, d).translate(x, y, zz));
+    batches.set(m, list);
+  };
+
+  // Steps, each with a seat row in alternating dark tones
   for (let r = 0; r < ROWS; r++) {
     const h = 1.2 + r * STEP_H;
-    const step = new Mesh(new BoxGeometry(HALF_W * 2, h, STEP_D), r % 2 ? concrete : concreteDark);
-    step.position.set(0, h / 2, -0.4 - r * STEP_D);
-    step.receiveShadow = true;
-    group.add(step);
-    // Seat row: gold and black blocks, in Southwestern colours
-    const seats = new Mesh(new BoxGeometry(HALF_W * 2, 0.16, 0.42), new MeshLambertMaterial({ color: r % 4 < 2 ? "#1f2533" : "#2b3142" }));
-    seats.position.set(0, h + 0.08, -0.55 - r * STEP_D);
-    group.add(seats);
+    box(HALF_W * 2, h, STEP_D, 0, h / 2, -0.4 - r * STEP_D, r % 2 ? concrete : concreteDark);
+    box(HALF_W * 2, 0.16, 0.42, 0, h + 0.08, -0.55 - r * STEP_D, r % 4 < 2 ? seatA : seatB);
   }
   // Back wall
   const backH = 1.2 + ROWS * STEP_H + 2;
-  const back = new Mesh(new BoxGeometry(HALF_W * 2, backH, 0.4), concreteDark);
-  back.position.set(0, backH / 2, -0.4 - ROWS * STEP_D - 0.2);
-  group.add(back);
+  box(HALF_W * 2, backH, 0.4, 0, backH / 2, -0.4 - ROWS * STEP_D - 0.2, concreteDark);
 
   // Front wall with sponsors, and a railing
   const wall = new Mesh(new BoxGeometry(HALF_W * 2, 1.25, 0.2), [
@@ -76,20 +86,12 @@ export function buildStand(scene: Scene, z: number, yaw: number): Stand {
   ]);
   wall.position.set(0, 0.62, 0.1);
   group.add(wall);
-  const rail = new Mesh(new BoxGeometry(HALF_W * 2, 0.05, 0.05), new MeshLambertMaterial({ color: "#d8dee9" }));
-  rail.position.set(0, 1.55, 0.05);
-  group.add(rail);
-  for (let x = -HALF_W; x <= HALF_W; x += 2.5) {
-    const post = new Mesh(new BoxGeometry(0.04, 0.35, 0.04), rail.material);
-    post.position.set(x, 1.38, 0.05);
-    group.add(post);
-  }
+  box(HALF_W * 2, 0.05, 0.05, 0, 1.55, 0.05, railMat);
+  for (let x = -HALF_W; x <= HALF_W; x += 2.5) box(0.04, 0.35, 0.04, x, 1.38, 0.05, railMat);
 
   // Roof on columns, with a sponsor fascia along the front edge
   const roofY = 1.2 + ROWS * STEP_H + 4.2;
-  const roof = new Mesh(new BoxGeometry(HALF_W * 2 + 2, 0.5, ROWS * STEP_D + 4), new MeshLambertMaterial({ color: "#121a2a" }));
-  roof.position.set(0, roofY, -(ROWS * STEP_D) / 2 + 1.2);
-  group.add(roof);
+  box(HALF_W * 2 + 2, 0.5, ROWS * STEP_D + 4, 0, roofY, -(ROWS * STEP_D) / 2 + 1.2, roofMat);
   const fascia = new Mesh(new BoxGeometry(HALF_W * 2 + 2, 1.5, 0.15), [
     concreteDark,
     concreteDark,
@@ -100,10 +102,11 @@ export function buildStand(scene: Scene, z: number, yaw: number): Stand {
   ]);
   fascia.position.set(0, roofY - 0.5, 3.25);
   group.add(fascia);
-  for (let x = -HALF_W + 4; x <= HALF_W - 4; x += 12) {
-    const col = new Mesh(new BoxGeometry(0.35, roofY, 0.35), new MeshLambertMaterial({ color: "#1a2233" }));
-    col.position.set(x, roofY / 2, -ROWS * STEP_D - 0.3);
-    group.add(col);
+  for (let x = -HALF_W + 4; x <= HALF_W - 4; x += 12) box(0.35, roofY, 0.35, x, roofY / 2, -ROWS * STEP_D - 0.3, columnMat);
+  for (const [m, list] of batches) {
+    const merged = mergeGeometries(list);
+    list.forEach((g) => g.dispose());
+    if (merged) group.add(new Mesh(merged, m));
   }
 
   // Fans: blocky bodies and heads, one instance each

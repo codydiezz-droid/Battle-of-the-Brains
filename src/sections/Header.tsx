@@ -1,3 +1,5 @@
+import { miniGame } from "../data/siteData";
+
 const links = [
   { href: "#team", label: "Team" },
   { href: "#coaches", label: "Coaches" },
@@ -26,6 +28,9 @@ export function Header() {
             </a>
           ))}
         </nav>
+        <a href={miniGame.url} className="header-play">
+          Play the game
+        </a>
       </div>
     </header>
   );

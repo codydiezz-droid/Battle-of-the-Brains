@@ -66,16 +66,6 @@ export function buildStadium(): Stadium {
   const sun = new DirectionalLight("#fff4e0", 1.6);
   sun.position.set(-12, 30, 22);
   sun.target.position.set(0, 0, 6);
-  sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024);
-  const sc = sun.shadow.camera;
-  sc.left = -10;
-  sc.right = 10;
-  sc.top = 16;
-  sc.bottom = -6;
-  sc.near = 5;
-  sc.far = 70;
-  sun.shadow.bias = -0.0008;
   scene.add(sun, sun.target);
 
   /* Pitch: stripes and markings painted on one large canvas */
@@ -128,7 +118,6 @@ export function buildStadium(): Stadium {
   const pitch = new Mesh(new PlaneGeometry(PW, PZ1 - PZ0), new MeshLambertMaterial({ map: pitchTex }));
   pitch.rotation.x = -Math.PI / 2;
   pitch.position.set(0, 0, (PZ0 + PZ1) / 2);
-  pitch.receiveShadow = true;
   scene.add(pitch);
   // Surround outside the pitch
   const ground = new Mesh(new PlaneGeometry(260, 260), new MeshLambertMaterial({ color: "#1d4f25" }));
@@ -142,7 +131,6 @@ export function buildStadium(): Stadium {
   for (const sx of [-1, 1]) {
     const post = new Mesh(new CylinderGeometry(POST_R, POST_R, GOAL_H + POST_R, 16), white);
     post.position.set(sx * GOAL_HALF, (GOAL_H + POST_R) / 2, 0);
-    post.castShadow = true;
     frame.add(post);
     const back = new Mesh(new CylinderGeometry(0.03, 0.03, GOAL_H, 8), white);
     back.position.set(sx * GOAL_HALF, GOAL_H / 2, -NET_DEPTH);
@@ -155,7 +143,6 @@ export function buildStadium(): Stadium {
   const bar = new Mesh(new CylinderGeometry(POST_R, POST_R, GOAL_HALF * 2 + POST_R * 2, 16), white);
   bar.rotation.z = Math.PI / 2;
   bar.position.set(0, GOAL_H, 0);
-  bar.castShadow = true;
   frame.add(bar);
   scene.add(frame);
 

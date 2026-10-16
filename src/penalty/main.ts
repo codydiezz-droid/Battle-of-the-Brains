@@ -1102,7 +1102,7 @@ function syncTransport() {
   else text = `Online · ${up} of ${total} servers reachable · waiting for your friend`;
   $("#lobby-transport").textContent = text;
   // Small print: each network's reach, and where the friend was heard (helps fix connection problems)
-  const label: Record<string, string> = { nostr: "Direct (Nostr)", torrent: "Direct (trackers)", relay: "Relays", mqtt: "Brokers", claude: "claude.ai", local: "This device" };
+  const label: Record<string, string> = { relay: "Relays", mqtt: "Brokers", claude: "claude.ai", local: "This device" };
   $("#lobby-diag").textContent =
     r
       .status()

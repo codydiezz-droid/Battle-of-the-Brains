@@ -44,7 +44,6 @@ const flat = (color: string) => new MeshLambertMaterial({ color });
 // Box face order in three.js: +x, -x, +y, -y, +z, -z
 function box(w: number, h: number, d: number, mats: Material | Material[]) {
   const m = new Mesh(new BoxGeometry(w, h, d), mats);
-  m.castShadow = true;
   return m;
 }
 
@@ -90,6 +89,10 @@ export class Avatar {
   readonly keeper: boolean;
   pose: Pose = restPose();
   private body = new Group();
+  /** The hips pivot, which the soft shadow follows. */
+  get hips() {
+    return this.body;
+  }
   private headPivot = new Group();
   private armL = new Group();
   private armR = new Group();

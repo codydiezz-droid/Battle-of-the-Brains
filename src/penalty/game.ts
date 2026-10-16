@@ -3,8 +3,8 @@ import {
   Mesh,
   MeshBasicMaterial,
   MeshLambertMaterial,
-  PCFSoftShadowMap,
   PerspectiveCamera,
+  PlaneGeometry,
   Plane,
   Raycaster,
   RingGeometry,
@@ -171,10 +171,13 @@ export class Engine {
   onAction: (a: "aim" | "charge" | "release" | "curve" | "shuffle" | "direction" | "dive") => void = () => {};
 
   constructor(private canvas: HTMLCanvasElement) {
-    this.renderer = new WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.6));
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = PCFSoftShadowMap;
+    // Performance first: phones skip antialiasing and draw at most 1.25x pixels;
+    // shadows are soft "blobs" under the players and ball, not a shadow-map pass
+    const coarse = matchMedia("(pointer: coarse)").matches;
+    this.renderer = new WebGLRenderer({ canvas, antialias: !coarse, powerPreference: "high-performance" });
+    this.maxPixelRatio = Math.min(window.devicePixelRatio || 1, coarse ? 1.25 : 1.5);
+    this.pixelRatio = this.maxPixelRatio;
+    this.renderer.setPixelRatio(this.pixelRatio);
     this.renderer.outputColorSpace = SRGBColorSpace;
     const scene = this.stadium.scene;
 
@@ -201,8 +204,8 @@ export class Engine {
     const ballTex = new CanvasTexture(c);
     ballTex.colorSpace = SRGBColorSpace;
     this.ballMesh = new Mesh(new SphereGeometry(BALL_R, 24, 16), new MeshLambertMaterial({ map: ballTex }));
-    this.ballMesh.castShadow = true;
     scene.add(this.ballMesh);
+    for (const b of this.blobs) scene.add(b);
 
     const ringMat = (color: string, opacity = 0.95) =>
       new MeshBasicMaterial({ color, transparent: true, opacity, side: DoubleSide, depthWrite: false });
@@ -221,6 +224,73 @@ export class Engine {
     window.addEventListener("resize", () => this.resize());
     this.resize();
     requestAnimationFrame(() => this.loop());
+  }
+
+  /* Soft round shadows: one texture, three flat discs (striker, keeper, ball) */
+  private blobs = (() => {
+    const c = document.createElement("canvas");
+    c.width = c.height = 64;
+    const g = c.getContext("2d")!;
+    const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, "rgba(0,0,0,0.55)");
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 64, 64);
+    const mat = new MeshBasicMaterial({ map: new CanvasTexture(c), transparent: true, depthWrite: false });
+    return [0, 1, 2].map((i) => {
+      const m = new Mesh(new PlaneGeometry(i === 2 ? 0.5 : 1.1, i === 2 ? 0.5 : 1.1), mat);
+      m.rotation.x = -Math.PI / 2;
+      m.position.y = 0.012 + i * 0.001;
+      m.renderOrder = 1;
+      return m;
+    });
+  })();
+  private blobPos = new Vector3();
+
+  /** Keep each shadow under its owner (the hips for players, scaled by the ball's height). */
+  private updateBlobs() {
+    const avs = this.celeb ? [this.celeb.winner, this.celeb.loser] : [this.shooterAv, this.keeperAv];
+    avs.forEach((av, i) => {
+      const b = this.blobs[i];
+      b.visible = !!av && av.root.visible;
+      if (!av || !b.visible) return;
+      av.hips.getWorldPosition(this.blobPos);
+      b.position.x = this.blobPos.x;
+      b.position.z = this.blobPos.z;
+      const lift = Math.max(0, this.blobPos.y - 0.6);
+      b.scale.setScalar(1 + lift * 0.4);
+      (b.material as MeshBasicMaterial).opacity = 1;
+    });
+    const bb = this.blobs[2];
+    bb.visible = this.ballMesh.visible;
+    bb.position.set(this.ball.p.x, 0.014, this.ball.p.z);
+    const k = Math.max(0.3, 1 - this.ball.p.y / 4);
+    bb.scale.setScalar(k);
+  }
+
+  /* Resolution scales itself: a slow device draws fewer pixels rather than stutter */
+  private maxPixelRatio = 1;
+  private pixelRatio = 1;
+  private frameAvg = 16;
+  private slowFor = 0;
+  private fastFor = 0;
+  private adaptResolution(dtMs: number) {
+    this.frameAvg += (dtMs - this.frameAvg) * 0.1;
+    if (this.frameAvg > 38) {
+      this.slowFor += dtMs;
+      this.fastFor = 0;
+    } else if (this.frameAvg < 20) {
+      this.fastFor += dtMs;
+      this.slowFor = 0;
+    } else this.slowFor = this.fastFor = 0;
+    const set = (r: number) => {
+      this.pixelRatio = r;
+      this.renderer.setPixelRatio(r);
+      this.resize();
+      this.slowFor = this.fastFor = 0;
+    };
+    if (this.slowFor > 1500 && this.pixelRatio > 0.6) set(Math.max(0.6, this.pixelRatio - 0.2));
+    else if (this.fastFor > 6000 && this.pixelRatio < this.maxPixelRatio) set(Math.min(this.maxPixelRatio, this.pixelRatio + 0.1));
   }
 
   /* ───────────────────────────── Setup ───────────────────────────── */
@@ -602,6 +672,7 @@ export class Engine {
     // leaving the device free for the interface and the online connection
     const gap = this.background === "frozen" ? Infinity : this.background === "slow" ? 0.25 : 0;
     if (now - this.lastDraw >= gap || this.phase === "celebrate" || !this.lastDraw) {
+      if (this.background === "full" && this.lastDraw) this.adaptResolution((now - this.lastDraw) * 1000);
       this.lastDraw = now;
       this.render();
     }
@@ -1062,6 +1133,7 @@ export class Engine {
     }
 
     this.stadium.update(t, 1 / 60, this.cheer);
+    this.updateBlobs();
     this.updateCamera();
     this.renderer.render(this.stadium.scene, this.camera);
   }

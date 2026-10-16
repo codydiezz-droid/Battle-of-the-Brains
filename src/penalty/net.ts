@@ -7,11 +7,8 @@
  * merges what it hears, so two players find each other even when one route
  * is blocked or they ended up on different routes:
  *  - the claude.ai artifact `room` capability, when the page runs as an artifact;
- *  - direct peer-to-peer (WebRTC via Trystero), found through two independent
- *    public signalling networks: Nostr relays and WebTorrent trackers;
- *  - the same Nostr relays carrying the game messages themselves, and public
- *    MQTT brokers doing the same, for networks (school Wi-Fi, mobile data)
- *    where a direct browser-to-browser link fails;
+ *  - public MQTT brokers and Nostr relays carrying the game messages (both
+ *    work through school Wi-Fi and mobile data, and connect in about 2 s);
  *  - BroadcastChannel, for two windows on the same device.
  * Each player tags their presence with a client id and a counter, so the same
  * player heard over two routes counts once, with the newest state winning.
@@ -98,9 +95,9 @@ async function claudeRoute(code: string): Promise<Route | null> {
   };
 }
 
-/* ───────────────────────────── Peer to peer ───────────────────────────── */
+/* ───────────────────────────── Relays ───────────────────────────── */
 
-// Large, well-known Nostr relays (only used to introduce the two browsers)
+// Large, well-known Nostr relays that pass the game's messages along
 const NOSTR_RELAYS = [
   "wss://relay.damus.io",
   "wss://nos.lol",
@@ -113,84 +110,6 @@ const NOSTR_RELAYS = [
   "wss://nostr.data.haus",
   "wss://nostr-01.yakihonne.com",
 ];
-const TORRENT_TRACKERS = [
-  "wss://tracker.webtorrent.dev",
-  "wss://tracker.openwebtorrent.com",
-  "wss://open.ftorrent.com",
-];
-
-type TrysteroRoom = {
-  makeAction: <T>(name: string) => {
-    send: (data: T, opts?: { target?: string }) => Promise<void>;
-    onMessage: ((data: T, ctx: { peerId: string }) => void) | null;
-  };
-  onPeerJoin: ((id: string) => void) | null;
-  onPeerLeave: ((id: string) => void) | null;
-  leave: () => Promise<void>;
-};
-type Join = (config: Record<string, unknown>, roomId: string) => TrysteroRoom;
-
-function trysteroRoute(name: string, join: Join, urls: string[], sockets: () => Record<string, WebSocket>, code: string): Route {
-  const room = join({ appId: "onebridge-penalty-club", relayConfig: { urls, redundancy: urls.length } }, `pc-${code.toLowerCase()}`);
-  const pres = room.makeAction<string>("pres");
-  const others = new Map<string, Presence>();
-  let mine: Presence = {};
-  let listener = () => {};
-  const send = (target?: string) => void pres.send(JSON.stringify(mine), target ? { target } : undefined).catch(() => {});
-  pres.onMessage = (text, { peerId }) => {
-    let data: unknown;
-    try {
-      data = JSON.parse(String(text));
-    } catch {
-      return;
-    }
-    if (!data || typeof data !== "object" || Array.isArray(data)) return;
-    others.set(peerId, data as Presence);
-    listener();
-  };
-  room.onPeerJoin = (peerId) => send(peerId);
-  room.onPeerLeave = (peerId) => {
-    others.delete(peerId);
-    listener();
-  };
-  return {
-    name,
-    send(p) {
-      mine = p;
-      send();
-    },
-    others: () => [...others.values()],
-    onChange: (fn) => (listener = fn),
-    servers() {
-      const list = Object.entries(sockets() ?? {}).filter(([url]) => urls.includes(url));
-      return { up: list.filter(([, s]) => s?.readyState === 1).length, total: urls.length };
-    },
-    leave: () => void room.leave().catch(() => {}),
-  };
-}
-
-async function p2pRoutes(code: string): Promise<Route[]> {
-  if (typeof RTCPeerConnection === "undefined") return [];
-  const out: Route[] = [];
-  const [nostr, torrent] = await Promise.allSettled([import("@trystero-p2p/nostr"), import("@trystero-p2p/torrent")]);
-  if (nostr.status === "fulfilled") {
-    try {
-      const m = nostr.value;
-      out.push(trysteroRoute("nostr", m.joinRoom as unknown as Join, NOSTR_RELAYS, m.getRelaySockets as unknown as () => Record<string, WebSocket>, code));
-    } catch {
-      /* unavailable here */
-    }
-  }
-  if (torrent.status === "fulfilled") {
-    try {
-      const m = torrent.value;
-      out.push(trysteroRoute("torrent", m.joinRoom as unknown as Join, TORRENT_TRACKERS, m.getRelaySockets as unknown as () => Record<string, WebSocket>, code));
-    } catch {
-      /* unavailable here */
-    }
-  }
-  return out;
-}
 
 /* ───────────────────────────── Through the relays ───────────────────────────── */
 
@@ -581,7 +500,7 @@ function localRoute(code: string): Route {
 export async function joinRoom(code: string, localOnly = false): Promise<NetRoom> {
   mark(`join ${code}`);
   const params = new URLSearchParams(location.search);
-  // ?only=mqtt (or relay, nostr, torrent, comma-separated) keeps just those routes, for testing
+  // ?only=mqtt (or relay, comma-separated) keeps just those routes, for testing
   const only = params.get("only")?.split(",") ?? null;
   const routes: Route[] = [];
   const cid = Math.random().toString(36).slice(2, 12);
@@ -636,10 +555,6 @@ export async function joinRoom(code: string, localOnly = false): Promise<NetRoom
     void claudeRoute(code)
       .then(add)
       .catch(() => {});
-    if (!testRelay)
-      void p2pRoutes(code)
-        .then((rs) => rs.forEach(add))
-        .catch(() => {});
   }
 
   return {
@@ -663,10 +578,7 @@ export async function joinRoom(code: string, localOnly = false): Promise<NetRoom
     servers() {
       let up = 0;
       let total = 0;
-      const hasRelay = routes.some((r) => r.name === "relay");
       for (const r of routes) {
-        // The relay route and Trystero's Nostr route use the same servers: count them once
-        if (hasRelay && r.name === "nostr") continue;
         const s = r.servers?.();
         if (s) {
           up += s.up;
@@ -693,8 +605,6 @@ export async function joinRoom(code: string, localOnly = false): Promise<NetRoom
 /** Fetch the online code in the background (while the menu is up), so joining is instant. */
 export function warmUp() {
   void import("@noble/secp256k1").catch(() => {});
-  void import("@trystero-p2p/nostr").catch(() => {});
-  void import("@trystero-p2p/torrent").catch(() => {});
 }
 
 /** A short, easy-to-say game code. */

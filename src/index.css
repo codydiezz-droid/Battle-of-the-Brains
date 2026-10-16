@@ -203,6 +203,24 @@ section[id] {
   color: #fff;
   background: #ffffff12;
 }
+/* The mini game, one tap away on every screen size */
+.header-play {
+  flex: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--gold, #ffb81c);
+  color: #14120e;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.header-play:hover {
+  filter: brightness(1.08);
+}
+.header-nav {
+  margin-left: auto;
+}
 
 /* Hero */
 .hero {

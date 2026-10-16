@@ -10,18 +10,10 @@ function canAffordScene() {
   return true;
 }
 
-function hasWebGL() {
-  try {
-    const c = document.createElement("canvas");
-    return Boolean(c.getContext("webgl2") || c.getContext("webgl"));
-  } catch {
-    return false;
-  }
-}
 
 /**
  * Decorative background for the hero. A static gradient and arc render first;
- * the three.js scene loads once the browser is idle and fades in on top.
+ * the animated 2D canvas scene loads once the browser is idle and fades in on top.
  * Hidden from assistive technology: it carries no information.
  */
 export function HeroBridge() {
@@ -30,9 +22,9 @@ export function HeroBridge() {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    // Reduced motion: keep the static arc and skip downloading three.js at all.
+    // Reduced motion: keep the static arc and skip the animation code entirely.
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!canvas || still || !canAffordScene() || !hasWebGL()) return;
+    if (!canvas || still || !canAffordScene()) return;
 
     const compact = window.matchMedia("(max-width: 760px)").matches;
     let handle: BridgeSceneHandle | null = null;
