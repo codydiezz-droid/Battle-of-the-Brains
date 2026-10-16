@@ -203,6 +203,14 @@ section[id] {
   color: #fff;
   background: #ffffff12;
 }
+.brand {
+  white-space: nowrap;
+}
+@media (max-width: 420px) {
+  .brand-long {
+    display: none;
+  }
+}
 /* The mini game, one tap away on every screen size */
 .header-play {
   flex: none;

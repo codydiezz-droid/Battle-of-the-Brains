@@ -19,7 +19,9 @@ export function Header() {
             <rect width="64" height="64" rx="14" fill="#ffb81c" />
             <path d="M14 44 C 22 22, 42 22, 50 44" fill="none" stroke="#14120e" strokeWidth="6" strokeLinecap="round" />
           </svg>
-          <span>Southwestern University</span>
+          <span>
+            Southwestern<span className="brand-long"> University</span>
+          </span>
         </a>
         <nav aria-label="Sections" className="header-nav">
           {links.map((l) => (

@@ -223,7 +223,13 @@ export class Engine {
     this.bindInput();
     window.addEventListener("resize", () => this.resize());
     this.resize();
-    requestAnimationFrame(() => this.loop());
+    // Compile the shaders in the background first (where the browser can), so the
+    // page stays responsive instead of freezing on the first frame
+    const begin = () => requestAnimationFrame(() => this.loop());
+    // (after the menu has painted: browsers without parallel compiling block while it runs)
+    const compile = () =>
+      Promise.race([this.renderer.compileAsync(this.stadium.scene, this.camera), new Promise((r) => setTimeout(r, 2500))]).then(begin, begin);
+    requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(compile, 30)));
   }
 
   /* Soft round shadows: one texture, three flat discs (striker, keeper, ball) */
@@ -767,7 +773,7 @@ export class Engine {
     }
 
     // Phase flow
-    if (this.phase === "ready" && e > 0.9 && !this.online) {
+    if (this.phase === "ready" && e > 0.6 && !this.online) {
       this.shooter.runStart = t;
       this.setPhase("runup");
     }
@@ -800,7 +806,7 @@ export class Engine {
       }
     }
     if (this.phase === "flight") this.checkFinished(t);
-    if (this.phase === "result" && t - this.resultT > (this.result && this.isHighlight(this.result) && !this.replayed ? 1.9 : 2.6)) {
+    if (this.phase === "result" && t - this.resultT > (this.result && this.isHighlight(this.result) && !this.replayed ? 1.3 : 1.9)) {
       if (this.result && this.isHighlight(this.result) && !this.replayed) this.startReplay();
       else this.finish();
     }
@@ -1009,7 +1015,7 @@ export class Engine {
 
   private updateReplay(_realDt: number) {
     const now = performance.now() / 1000;
-    const rt = this.replayFrom + (now - this.replayStart) * 0.45;
+    const rt = this.replayFrom + (now - this.replayStart) * 0.55;
     const last = this.record[this.record.length - 1];
     if (rt >= last.t) return this.finishReplay();
     let f = this.record[0];

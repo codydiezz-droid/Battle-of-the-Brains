@@ -27,6 +27,8 @@ const ROWS = 16;
 const STEP_D = 0.85;
 const STEP_H = 0.55;
 const HALF_W = 34;
+// Phones get a thinner crowd (about half the fans): smoother play over a fuller stand
+const SEAT_GAP = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches ? 1.1 : 0.58;
 
 function stripTexture(repeat: number) {
   const t = new CanvasTexture(sponsorStrip(512, 96));
@@ -119,7 +121,7 @@ export function buildStand(scene: Scene, z: number, yaw: number): Stand {
   const spots: { x: number; y: number; z: number; stand: boolean; phase: number }[] = [];
   for (let r = 0; r < ROWS; r++) {
     const floor = 1.2 + r * STEP_H;
-    for (let x = -HALF_W + 0.4; x < HALF_W - 0.4; x += 0.58) {
+    for (let x = -HALF_W + 0.4; x < HALF_W - 0.4; x += SEAT_GAP) {
       // Aisles every 11 m
       const aisle = Math.abs(((x + HALF_W) % 11) - 5.5) < 0.55;
       if (aisle || Math.random() < 0.07) continue;
