@@ -3,13 +3,15 @@ import { useEffect, useRef, useState } from "react";
 import { finalVideo } from "../data/siteData";
 import { photoSmall, photoSrcSet } from "../lib/images";
 
-const embedUrl = `https://drive.google.com/file/d/${finalVideo.driveId}/preview`;
-const driveUrl = `https://drive.google.com/file/d/${finalVideo.driveId}/view`;
+// youtube-nocookie: YouTube's privacy-enhanced player, which sets no tracking
+// cookies until the video plays. Autoplay starts it right after the poster click.
+const embedUrl = `https://www.youtube-nocookie.com/embed/${finalVideo.youtubeId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
+const watchUrl = `https://youtu.be/${finalVideo.youtubeId}`;
 
 /**
  * The recording of our final-round presentation. A poster stands in for the
- * player until someone presses play, so Google Drive loads nothing (and sets
- * no cookies) for visitors who never watch.
+ * player until someone presses play, so YouTube loads nothing for visitors who
+ * never watch.
  */
 export function FinalPresentation() {
   const [playing, setPlaying] = useState(false);
@@ -51,7 +53,8 @@ export function FinalPresentation() {
               ref={frameRef}
               src={embedUrl}
               title={finalVideo.title}
-              allow="autoplay; fullscreen; picture-in-picture"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+              referrerPolicy="strict-origin-when-cross-origin"
               allowFullScreen
             />
           ) : (
@@ -79,8 +82,8 @@ export function FinalPresentation() {
 
         <p className="final-foot">
           <span>{finalVideo.credit}</span>
-          <a href={driveUrl} target="_blank" rel="noopener noreferrer">
-            Watch on Google Drive
+          <a href={watchUrl} target="_blank" rel="noopener noreferrer">
+            Watch on YouTube
             <ArrowUpRight size={15} aria-hidden="true" />
             <span className="sr-only"> (opens in a new tab)</span>
           </a>

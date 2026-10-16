@@ -452,11 +452,11 @@ export const onebridge = {
 };
 
 /**
- * The recording of our final-round presentation, hosted on Google Drive.
- * The file must stay shared as "Anyone with the link can view" to play here.
+ * The recording of our final-round presentation, on YouTube
+ * (https://youtu.be/2tXVRB6m89U). Keep it Public or Unlisted so it plays here.
  */
 export const finalVideo = {
-  driveId: "1pFSZoKEkAC4EJjJmshQoRsBU9lR5bzin",
+  youtubeId: "2tXVRB6m89U",
   title: "Southwestern University presenting OneBridge in the final round of the 2026 HSI Battle of the Brains",
   /** Approximate lengths, as described by the team. */
   pitch: "7 min",

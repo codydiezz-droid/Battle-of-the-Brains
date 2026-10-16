@@ -26,7 +26,7 @@ Built with React, Vite and TypeScript, plain CSS, three.js for the hero animatio
 | The week | A timeline of the week with event photos | `week`, `photos` |
 | OneBridge | The problem as a scroll story, how it works, how we built it, pricing, links | `onebridge`, `presentation` |
 | Photos | Every event photo, with a lightbox | `gallery` |
-| Our final presentation | The recording of the final-round pitch and Q&A, played from Google Drive | `finalVideo` |
+| Our final presentation | The recording of the final-round pitch and Q&A, played from YouTube | `finalVideo` |
 | Thank you | Acknowledgments and a one-line footer | `gratitude` |
 
 ---
@@ -73,9 +73,8 @@ Everything on the page comes from `src/data/siteData.ts`.
 - **Bios, home countries, LinkedIn:** edit the person's entry in `team` or `coaches`. Optional fields can be
   left as `""` and the layout adapts. `country` is used to count how many countries the team comes from.
 - **Coach titles:** fill in `title` once confirmed. Until then each coach shows "Coach".
-- **The final presentation:** `finalVideo.driveId` is the Google Drive file. It plays on the page only while
-  the file stays shared as "Anyone with the link can view". The Drive player loads only after a visitor presses
-  play.
+- **The final presentation:** `finalVideo.youtubeId` is the YouTube video (keep it Public or Unlisted). YouTube's
+  privacy-enhanced player loads only after a visitor presses play.
 - **Elias's Easter egg:** `portraitLink` on a student makes only their photo a link (no visible hint). It is
   set for Elias, pointing to his website.
 - **Emails:** `showStudentEmails` and `showCoachEmails` are `false`, so no address appears on the page.
