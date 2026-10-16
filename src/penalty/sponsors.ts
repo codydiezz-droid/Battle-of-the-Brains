@@ -31,6 +31,35 @@ function fit(g: Ctx, text: string, max: number, size: number, weight = 900) {
   return s;
 }
 
+/**
+ * A shield with "SU" in Southwestern black and gold. A stand-in for the
+ * university's official logo: replace with the real artwork when available.
+ */
+export function suBadge(g: Ctx, x: number, y: number, h: number) {
+  const w = h * 0.86;
+  const shield = (inset: number) => {
+    g.beginPath();
+    g.moveTo(x + inset, y + inset);
+    g.lineTo(x + w - inset, y + inset);
+    g.lineTo(x + w - inset, y + h * 0.55);
+    g.quadraticCurveTo(x + w - inset, y + h * 0.85, x + w / 2, y + h - inset);
+    g.quadraticCurveTo(x + inset, y + h * 0.85, x + inset, y + h * 0.55);
+    g.closePath();
+  };
+  shield(0);
+  g.fillStyle = "#141210";
+  g.fill();
+  shield(h * 0.06);
+  g.lineWidth = h * 0.05;
+  g.strokeStyle = "#ffb81c";
+  g.stroke();
+  g.font = `900 ${h * 0.46}px ${SANS}`;
+  g.fillStyle = "#ffb81c";
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  g.fillText("SU", x + w / 2, y + h * 0.47);
+}
+
 export const tiles: Record<string, Tile> = {
   homeDepot: {
     bg: "#ffffff",
@@ -180,8 +209,15 @@ export const tiles: Record<string, Tile> = {
   pirates: {
     bg: "#ffb81c",
     draw(g, w, h) {
-      const size = fit(g, "GO PIRATES", w * 0.85, h * 0.5);
-      centred(g, "GO PIRATES", w / 2, h / 2, size, "#141210");
+      // SU badge (a stand-in until the official Southwestern mark is added), then GO PIRATES
+      suBadge(g, w * 0.06, h * 0.1, h * 0.8);
+      const x = w * 0.06 + h * 0.8 * 0.86 + w * 0.05;
+      const size = fit(g, "GO PIRATES", w - x - w * 0.05, h * 0.48);
+      g.font = `900 ${size}px ${SANS}`;
+      g.fillStyle = "#141210";
+      g.textAlign = "left";
+      g.textBaseline = "middle";
+      g.fillText("GO PIRATES", x, h / 2);
     },
   },
 };
