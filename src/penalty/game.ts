@@ -76,6 +76,9 @@ const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
  * of where you dived (or along the line of the dive) is saved, and so is one
  * within `stand` of your body when you stay on your feet.
  */
+/** How far (metres) the aim circle drifts on its own while you line up a penalty. */
+const SWAY: Record<Difficulty, number> = { easy: 0.3, medium: 0.5, hard: 0.72 };
+
 const ASSIST: Record<Difficulty, { dive: number; stand: number }> = {
   easy: { dive: 1.8, stand: 1.3 },
   medium: { dive: 1.5, stand: 1.1 },
@@ -129,6 +132,9 @@ export class Engine {
   charging = false;
   private chargeT = 0;
   curve = 0;
+  /** The aim circle's own drift, added to where the player points. */
+  private sway = { x: 0, y: 0 };
+  private swayPhase = [0, 0, 0, 0];
   private released: { power: number; aim: { x: number; y: number }; curve: number; perfect: boolean } | null = null;
   /** Online play: the other player controls the other end. */
   online = false;
@@ -283,6 +289,8 @@ export class Engine {
     this.events = [];
     this.timeScale = 1;
     this.aim = { x: 0, y: 1.2 };
+    this.sway = { x: 0, y: 0 };
+    this.swayPhase = this.swayPhase.map(() => Math.random() * Math.PI * 2);
     this.diveTarget = { x: 0, y: 0.6 };
     this.keeperBrain.setDiff(this.diff, this.keeperAv.player.stats);
     this.shooterBrain.setDiff(this.diff, this.shooterAv.player.stats);
@@ -291,7 +299,7 @@ export class Engine {
       const { lean } = this.keeperBrain.plan();
       this.keeper.x = online ? 0 : lean;
       this.setPhase("aim");
-      this.onHint("Aim with the mouse or arrow keys. Hold Space (or press and hold) to charge, release to shoot.");
+      this.onHint("Aim with the mouse or arrows (the circle drifts, keep it steady). Hold Space to charge, release to shoot.");
     } else if (online) {
       this.plan = null;
       this.setPhase("ready");
@@ -327,7 +335,8 @@ export class Engine {
     const p = this.power;
     const [lo, hi] = this.diff.sweet;
     const perfect = p >= lo && p <= hi;
-    this.released = { power: p, aim: { ...this.aim }, curve: this.curve, perfect };
+    // The ball goes where the drifting circle is at the moment of release
+    this.released = { power: p, aim: this.aimPoint(), curve: this.curve, perfect };
     this.shooter.runStart = this.simT;
     this.shooter.cue = 0;
     if (this.online) {
@@ -535,6 +544,14 @@ export class Engine {
     return this.raycaster.ray.intersectPlane(this.goalPlane, hit) ? hit : null;
   }
 
+  /** Where the shot is aimed right now: the pointer plus the circle's drift. */
+  private aimPoint() {
+    return {
+      x: clamp(this.aim.x + this.sway.x, -GOAL_HALF - 1.4, GOAL_HALF + 1.4),
+      y: clamp(this.aim.y + this.sway.y, 0.12, GOAL_H + 1.4),
+    };
+  }
+
   private updateAimFromMouse() {
     const hit = this.mouseOnGoal();
     if (!hit) return;
@@ -604,6 +621,15 @@ export class Engine {
         this.aim.y = clamp(this.aim.y + ay * 2.0 * realDt, 0.12, GOAL_H + 1.2);
         this.onAction("aim");
       }
+      // The circle wanders: two slow waves per axis, a little wider while charging
+      const acc = this.shooterAv!.player.stats.accuracy;
+      const amp = SWAY[this.difficulty] * (1.3 - acc * 0.1) * (this.charging ? 1.35 : 1);
+      const ph = this.swayPhase;
+      const tx = (Math.sin(t * 1.7 + ph[0]) * 0.65 + Math.sin(t * 3.1 + ph[1]) * 0.35) * amp;
+      const ty = (Math.sin(t * 1.3 + ph[2]) * 0.6 + Math.sin(t * 2.6 + ph[3]) * 0.4) * amp * 0.65;
+      const k = Math.min(1, realDt * 6);
+      this.sway.x += (tx - this.sway.x) * k;
+      this.sway.y += (ty - this.sway.y) * k;
       if (this.charging) {
         // Rises for 0.85 s, then falls back if held too long
         const c = ((t - this.chargeT) / 0.85) % 2;
@@ -999,7 +1025,8 @@ export class Engine {
     const aiming = this.role === "shoot" && this.phase === "aim";
     this.reticle.visible = aiming;
     if (aiming) {
-      this.reticle.position.set(this.aim.x, this.aim.y, 0.08);
+      const a = this.aimPoint();
+      this.reticle.position.set(a.x, a.y, 0.08);
       const m = this.reticle.material as MeshBasicMaterial;
       m.color.set(this.charging ? (this.power > this.diff.overStart ? "#ff5a5a" : this.power >= this.diff.sweet[0] && this.power <= this.diff.sweet[1] ? "#ffb81c" : "#ffffff") : "#ffffff");
       const s = 1 + (this.charging ? 0 : Math.sin(t * 6) * 0.06);

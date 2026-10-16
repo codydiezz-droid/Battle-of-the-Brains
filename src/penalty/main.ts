@@ -896,7 +896,7 @@ meters();
 /* ───────────────────────────── Tutorial ───────────────────────────── */
 
 const shootSteps = [
-  { id: "aim", text: "Move the mouse (or arrow keys) to aim at the goal." },
+  { id: "aim", text: "Move the mouse (or arrow keys) to aim. The circle drifts on its own, so keep correcting it." },
   { id: "charge", text: "Hold Space or the mouse button to charge power." },
   { id: "release", text: "Release in the gold zone. In the red it may fly over." },
   { id: "curve", text: "Optional: Q / E bends the shot around the keeper." },
