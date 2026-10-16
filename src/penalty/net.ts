@@ -104,18 +104,14 @@ const NOSTR_RELAYS = [
   "wss://nostr.mom",
   "wss://relay.snort.social",
   "wss://offchain.pub",
-  "wss://relay.nostr.bg",
   "wss://purplerelay.com",
   "wss://nostr.data.haus",
-  "wss://relay.mostr.pub",
   "wss://nostr-01.yakihonne.com",
 ];
 const TORRENT_TRACKERS = [
   "wss://tracker.webtorrent.dev",
   "wss://tracker.openwebtorrent.com",
-  "wss://tracker.btorrent.xyz",
   "wss://open.ftorrent.com",
-  "wss://tracker.files.fm:7073/announce",
 ];
 
 type TrysteroRoom = {

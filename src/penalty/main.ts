@@ -1513,9 +1513,40 @@ function onlineRematch() {
   startOnlineMatch(id);
 }
 
+/* Invite links: the code travels in the link, so a friend lands on the right page and joins at once */
+const PUBLIC_GAME = "https://codydiezz-droid.github.io/Battle-of-the-Brains/penalty-club/";
+function inviteLink(code: string) {
+  const here = location.protocol.startsWith("http") && location.hostname.endsWith("github.io") ? location.origin + location.pathname : PUBLIC_GAME;
+  return `${here}?join=${code}`;
+}
+$("#lobby-invite").addEventListener("click", async () => {
+  if (!net) return;
+  const url = inviteLink(net.room.code);
+  const text = `Play me in OneBridge Penalty Club. Game ${net.room.code}:`;
+  try {
+    if (navigator.share && matchMedia("(pointer: coarse)").matches) await navigator.share({ title: "OneBridge Penalty Club", text, url });
+    else {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      toast("Invite link copied. Send it to your friend.");
+    }
+  } catch {
+    /* share sheet closed */
+  }
+});
+
 /* ───────────────────────────── Start ───────────────────────────── */
 
 // The two favourite players stand on the pitch behind the menu
 engine.setCast(byId(save.shooterId), byId(save.keeperId));
 syncMenu();
 show("menu");
+
+// Opened from an invite link: go straight into that game
+const invited = new URLSearchParams(location.search).get("join")?.toUpperCase().replace(/[^A-Z0-9]/g, "") ?? "";
+if (invited.length === 4) {
+  history.replaceState(null, "", location.pathname + location.search.replace(/[?&]join=[^&]*/, "").replace(/^&/, "?"));
+  mode = "online";
+  ($("#nick") as HTMLInputElement).value = save.nick;
+  show("online");
+  void joinAs(invited, false);
+}
