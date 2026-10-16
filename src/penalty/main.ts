@@ -1,7 +1,7 @@
 import "@fontsource-variable/schibsted-grotesk";
 import "@fontsource-variable/public-sans";
 import "./penalty.css";
-import { DIFF, type Difficulty } from "./ai";
+import { DIFF } from "./ai";
 import * as sfx from "./audio";
 import { Engine, type KickResult, type Role, type SentDive, type SentResult, type Shot } from "./game";
 import { joinRoom, newCode, type NetPeer, type NetRoom } from "./net";
@@ -37,10 +37,9 @@ function show(...visible: Screen[]) {
 let mode: Mode = "challenge";
 
 function syncMenu() {
-  document.querySelectorAll<HTMLInputElement>("input[name=diff]").forEach((r) => (r.checked = r.value === save.difficulty));
   const d = save.difficulty;
-  $("[data-best=challenge]").textContent = `Best on ${DIFF[d].label}: ${save.best.challenge[d]} / 5`;
-  $("[data-best=keeper]").textContent = `Best on ${DIFF[d].label}: ${save.best.keeper[d]} saves`;
+  $("[data-best=challenge]").textContent = `Best: ${save.best.challenge[d]} / 5`;
+  $("[data-best=keeper]").textContent = `Best: ${save.best.keeper[d]} saves`;
   $("[data-best=shootout]").textContent = `Record: ${save.shootout.wins} won, ${save.shootout.losses} lost`;
   const acc = save.totals.shots ? Math.round((save.totals.goals / save.totals.shots) * 100) : 0;
   const sv = save.totals.faced ? Math.round((save.totals.saves / save.totals.faced) * 100) : 0;
@@ -135,18 +134,12 @@ function kickAchievements(r: KickResult) {
   if (r.role === "shoot" && r.outcome === "goal") {
     achieve("first-goal");
     if (r.perfect) achieve("perfect");
+    if (r.label === "GOLAZO!") achieve("golazo");
     if (save.totals.goals >= 25) achieve("century");
   }
   if (r.role === "keep" && r.outcome !== "goal") achieve("first-save");
 }
 
-document.querySelectorAll<HTMLInputElement>("input[name=diff]").forEach((r) =>
-  r.addEventListener("change", () => {
-    save.difficulty = r.value as Difficulty;
-    persist();
-    syncMenu();
-  }),
-);
 
 document.querySelectorAll<HTMLButtonElement>("[data-mode]").forEach((b) =>
   b.addEventListener("click", () => {
@@ -681,7 +674,7 @@ function playCelebration(winner: Celebrant, loser: Celebrant, id: string, then: 
 }
 
 /** XP for a finished match, shown on the results screen. */
-function showAward(kicks: KickResult[], won: boolean, bonusHard: boolean) {
+function showAward(kicks: KickResult[], won: boolean) {
   const shots = kicks.filter((k) => k.role === "shoot");
   const faced = kicks.filter((k) => k.role === "keep");
   const scored = shots.filter((k) => k.outcome === "goal").length;
@@ -694,7 +687,6 @@ function showAward(kicks: KickResult[], won: boolean, bonusHard: boolean) {
     [`Perfect strikes × ${perfect}`, perfect * 5],
     ["Win", won ? 40 : 0],
   ];
-  if (bonusHard) lines.push(["Hard difficulty bonus", Math.round(lines.reduce((a, [, n]) => a + n, 0) * 0.5)]);
   renderAward(award(lines));
 }
 
@@ -752,7 +744,7 @@ function endMatch(result: "you" | "cpu" | "done") {
   const m = match;
   const d = save.difficulty;
   let title = "";
-  let kicker = `${DIFF[d].label} · `;
+  let kicker = "";
   let score = "";
   let line = "";
   let best = false;
@@ -764,7 +756,7 @@ function endMatch(result: "you" | "cpu" | "done") {
     title = n === 5 ? "PERFECT FIVE!" : won ? "YOU BEAT THE KEEPER!" : "THE KEEPER WINS";
     score = `${n} / 5`;
     line = ["The keeper had your number.", "One goal. Work on your timing.", "Two goals. Aim further from the keeper.", "Three goals. One short: you need 4 to win.", "Four from five. Ice cold.", "Five from five. Clinical."][n];
-    shareText = `I scored ${n} from 5 penalties on ${DIFF[d].label}.`;
+    shareText = `I scored ${n} from 5 penalties in OneBridge Penalty Club.`;
     if (n === 5) achieve("clinical");
     if (n > save.best.challenge[d]) {
       save.best.challenge[d] = n;
@@ -777,7 +769,7 @@ function endMatch(result: "you" | "cpu" | "done") {
     title = n >= 4 ? "A WALL!" : won ? "YOU WIN IN GOAL!" : "THE STRIKER WINS";
     score = `${n} / 5`;
     line = ["They found the corners every time.", "One stop. You need 2 to win.", "Two stops. That’s the win.", "Three stops. A proper keeper.", "Four stops. Outstanding.", "Clean sheet. Unbeatable."][n];
-    shareText = `I kept out ${n} of 5 penalties on ${DIFF[d].label}.`;
+    shareText = `I kept out ${n} of 5 penalties in OneBridge Penalty Club.`;
     if (n >= 4) achieve("wall");
     if (n > save.best.keeper[d]) {
       save.best.keeper[d] = n;
@@ -787,7 +779,7 @@ function endMatch(result: "you" | "cpu" | "done") {
     kicker += "Full Shootout";
     won = result === "you";
     title = won ? "SHOOTOUT WINNER!" : "Shootout lost";
-    shareText = `I ${won ? "won" : "lost"} a penalty shootout ${goals(m.you)}–${goals(m.cpu)} on ${DIFF[d].label}.`;
+    shareText = `I ${won ? "won" : "lost"} a penalty shootout ${goals(m.you)}–${goals(m.cpu)}.`;
     if (won) achieve("shootout");
     if (won && m.you.length > 5) achieve("sudden");
     score = `${goals(m.you)} – ${goals(m.cpu)}`;
@@ -812,8 +804,7 @@ function endMatch(result: "you" | "cpu" | "done") {
   }
   if (faced.length) rows.push(["Penalties saved", `${faced.filter((k) => k.outcome !== "goal").length} / ${faced.length}`]);
   $("#end-stats").innerHTML = rows.map(([a, b]) => `<div><dt>${a}</dt><dd>${b}</dd></div>`).join("");
-  if (won && d === "hard") achieve("hard");
-  showAward(m.kicks, won, d === "hard");
+  showAward(m.kicks, won);
   show("end");
 }
 
@@ -1256,7 +1247,7 @@ function startOnlineMatch(id: string) {
   net.waitCel = null;
   window.clearInterval(pickTimer);
   matchUnlocks = [];
-  engine.setDifficulty("medium");
+  engine.setDifficulty("easy");
   $("#practice-switch").hidden = true;
   $("#pause").hidden = true;
   $("#team-cpu").hidden = false;
@@ -1507,7 +1498,7 @@ function endOnline(result: Side | "done") {
   $("#end-score").textContent = score;
   $("#end-line").textContent = line;
   $("#end-stats").innerHTML = "";
-  showAward(net.kicks, onlineWinnerSide(result) === mySide(), false);
+  showAward(net.kicks, onlineWinnerSide(result) === mySide());
   const rematch = $("#rematch") as HTMLButtonElement;
   rematch.disabled = !net.host;
   rematch.textContent = net.host ? "Rematch" : "Waiting for host…";

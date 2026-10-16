@@ -579,6 +579,13 @@ export async function joinRoom(code: string, localOnly = false): Promise<NetRoom
       /* unavailable here */
     }
   }
+  // ?only=mqtt (or relay, nostr, torrent, comma-separated) keeps just those routes, for testing
+  const only = new URLSearchParams(location.search).get("only");
+  if (only) {
+    const keep = only.split(",");
+    for (const r of routes.filter((x) => !keep.includes(x.name))) r.leave();
+    routes.splice(0, routes.length, ...routes.filter((x) => keep.includes(x.name)));
+  }
   const cid = Math.random().toString(36).slice(2, 12);
   let seq = 0;
   let mine: Presence = { cid, seq };

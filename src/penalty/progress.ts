@@ -36,7 +36,7 @@ export const achievements: Achievement[] = [
   { id: "shootout", name: "Shootout hero", how: "Win a full shootout." },
   { id: "sudden", name: "Ice in the veins", how: "Win a shootout in sudden death." },
   { id: "online", name: "Online debut", how: "Finish an online match." },
-  { id: "hard", name: "Hard mode hero", how: "Win any match on Hard." },
+  { id: "golazo", name: "Golazo", how: "Score a golazo: top corner or a thunderbolt." },
   { id: "century", name: "Twenty-five club", how: "Score 25 career penalties." },
 ];
 

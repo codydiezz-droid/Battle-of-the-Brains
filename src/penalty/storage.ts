@@ -28,7 +28,7 @@ export interface Save {
 const KEY = "onebridge-penalty-club-v2";
 
 const fresh = (): Save => ({
-  difficulty: "medium",
+  difficulty: "easy",
   muted: false,
   tutorial: { shoot: false, keep: false },
   shooterId: "cody",
@@ -61,6 +61,8 @@ function load(): Save {
       },
       shootout: { ...base.shootout, ...data.shootout },
       totals: { ...base.totals, ...data.totals },
+      // The game has one difficulty now: Easy
+      difficulty: "easy",
       xp: Number.isFinite(data.xp) ? data.xp : 0,
       achievements: Array.isArray(data.achievements) ? data.achievements.filter((a: unknown) => typeof a === "string") : [],
       streak: { ...base.streak, ...data.streak },
