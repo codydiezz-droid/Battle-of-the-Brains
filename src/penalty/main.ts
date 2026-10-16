@@ -29,7 +29,7 @@ type Screen = (typeof screens)[number];
 function show(...visible: Screen[]) {
   for (const s of screens) $(`#${s}`).hidden = !visible.includes(s);
   // Full-speed 3D only when the match (or a celebration) is on screen
-  engine.background = !visible.includes("hud");
+  engine.background = visible.includes("hud") ? "full" : visible.includes("online") || visible.includes("lobby") ? "frozen" : "slow";
   const top = visible[visible.length - 1];
   $(`#${top}`).querySelector<HTMLElement>("[data-autofocus]")?.focus();
 }

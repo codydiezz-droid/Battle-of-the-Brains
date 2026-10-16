@@ -600,15 +600,20 @@ export class Engine {
     }
     // Behind menus and the lobby the scene is only scenery: draw it gently,
     // leaving the device free for the interface and the online connection
-    if (!this.background || now - this.lastDraw > 0.1 || this.phase === "celebrate") {
+    const gap = this.background === "frozen" ? Infinity : this.background === "slow" ? 0.25 : 0;
+    if (now - this.lastDraw >= gap || this.phase === "celebrate" || !this.lastDraw) {
       this.lastDraw = now;
       this.render();
     }
     requestAnimationFrame(() => this.loop());
   }
 
-  /** True while a menu covers the pitch: the scene redraws at about 10 frames a second. */
-  background = false;
+  /**
+   * How hard to draw: every frame in a match; about 4 frames a second behind
+   * menus; not at all behind the online screens, so a phone can give the
+   * connection its full attention.
+   */
+  background: "full" | "slow" | "frozen" = "full";
   private lastDraw = 0;
 
   private update(dt: number, realDt: number) {

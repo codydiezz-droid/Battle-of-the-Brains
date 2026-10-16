@@ -331,7 +331,7 @@ async function relayRoute(code: string, urls: string[]): Promise<Route> {
 
 /* ───────────────────────────── MQTT brokers ───────────────────────────── */
 
-const MQTT_BROKERS = ["wss://broker.emqx.io:8084/mqtt", "wss://broker.hivemq.com:8884/mqtt", "wss://test.mosquitto.org:8081/mqtt", "wss://broker-cn.emqx.io:8084/mqtt"];
+const MQTT_BROKERS = ["wss://broker.emqx.io:8084/mqtt", "wss://broker.hivemq.com:8884/mqtt", "wss://test.mosquitto.org:8081/mqtt"];
 
 /*
  * A minimal MQTT 3.1.1 client over WebSocket (connect, subscribe, publish at
@@ -411,8 +411,10 @@ function mqttRoute(code: string, urls: string[], selfId: string): Route {
       let ping = 0;
       let buf = new Uint8Array(0);
       ws.onopen = () => {
-        // CONNECT: protocol "MQTT" level 4, clean session, 60 s keep-alive
-        ws.send(mqttPacket(0x10, [...mqttStr("MQTT"), 4, 0x02, 0, 60, ...mqttStr(clientId)]));
+        // CONNECT: protocol "MQTT" level 4, clean session, 60 s keep-alive.
+        // A fresh client id per connection: brokers drop an older session that shares one.
+        const id = `${clientId}${urls.indexOf(url)}${Math.random().toString(36).slice(2, 6)}`;
+        ws.send(mqttPacket(0x10, [...mqttStr("MQTT"), 4, 0x02, 0, 60, ...mqttStr(id)]));
         ping = window.setInterval(() => ws.readyState === 1 && ws.send(new Uint8Array([0xc0, 0])), 30000);
       };
       ws.onmessage = (m) => {
