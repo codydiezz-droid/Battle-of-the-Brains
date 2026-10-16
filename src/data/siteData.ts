@@ -139,6 +139,7 @@ export const team: TeamMember[] = [
     country: "Pakistan",
     bio: "Originally from Karachi, Pakistan, Elias joined the team to represent Southwestern and take on a real-world business challenge in 24 hours. He worked alongside six classmates to research, build, and present OneBridge in the final round.",
     linkedin: "https://www.linkedin.com/in/esarwana/",
+    portraitLink: "https://codydiezz-droid.github.io/Elias/",
   },
   {
     name: "Juan Carlos",
@@ -437,6 +438,21 @@ export const onebridge = {
   /** How the team split the 24 hours. */
   disciplines: ["Research", "Business strategy", "Data analysis", "Design", "AI", "Financial modeling"],
   pricing: { setup: "$250", monthly: "$149" },
+};
+
+/**
+ * The recording of our final-round presentation, hosted on Google Drive.
+ * The file must stay shared as "Anyone with the link can view" to play here.
+ */
+export const finalVideo = {
+  driveId: "1pFSZoKEkAC4EJjJmshQoRsBU9lR5bzin",
+  title: "Southwestern University presenting OneBridge in the final round of the 2026 HSI Battle of the Brains",
+  /** Approximate lengths, as described by the team. */
+  pitch: "7 min",
+  questions: "3 min",
+  total: "About 10 minutes",
+  credit: "Recording shared by Dr. Abby Dings.",
+  poster: photos.presenting,
 };
 
 /** The final pitch deck, in public/presentation/. */

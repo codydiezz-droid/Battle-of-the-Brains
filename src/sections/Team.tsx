@@ -1,10 +1,30 @@
 import { LinkedInIcon } from "../components/Icons";
 import { team } from "../data/siteData";
+import type { TeamMember } from "../data/types";
 import { asset, hasImage } from "../lib/images";
 import { portraitAlt, visibleEmail } from "../lib/people";
 import { spellNumber } from "../lib/text";
 
 const countries = new Set(team.map((m) => m.country)).size;
+
+/** The photo, or initials when the file is missing. */
+function portrait(m: TeamMember) {
+  return hasImage(m.image) ? (
+    <img
+      src={asset(m.image)}
+      alt={m.portraitLink ? "" : portraitAlt(m)}
+      width="560"
+      height="560"
+      loading="lazy"
+      decoding="async"
+      style={{ objectPosition: m.objectPosition || "50% 25%" }}
+    />
+  ) : (
+    <span className="member-initials" aria-hidden="true">
+      {m.initials}
+    </span>
+  );
+}
 
 /** The seven students. Same card for everyone; the order is not a ranking. */
 export function Team() {
@@ -25,23 +45,20 @@ export function Team() {
             const email = visibleEmail(m, "student");
             return (
               <li key={m.name} className="member" data-reveal style={{ "--i": i % 4 } as React.CSSProperties}>
-                <div className="member-photo">
-                  {hasImage(m.image) ? (
-                    <img
-                      src={asset(m.image)}
-                      alt={portraitAlt(m)}
-                      width="560"
-                      height="560"
-                      loading="lazy"
-                      decoding="async"
-                      style={{ objectPosition: m.objectPosition || "50% 25%" }}
-                    />
-                  ) : (
-                    <span className="member-initials" aria-hidden="true">
-                      {m.initials}
-                    </span>
-                  )}
-                </div>
+                {m.portraitLink ? (
+                  // Easter egg: only the photo links out, and nothing on the card says so.
+                  <a
+                    className="member-photo is-egg"
+                    href={m.portraitLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${m.name}’s website (opens in a new tab)`}
+                  >
+                    {portrait(m)}
+                  </a>
+                ) : (
+                  <div className="member-photo">{portrait(m)}</div>
+                )}
                 <h3>{m.name}</h3>
                 {m.location && (
                   <p className="member-place">

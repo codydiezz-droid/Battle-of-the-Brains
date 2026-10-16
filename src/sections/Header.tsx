@@ -4,6 +4,7 @@ const links = [
   { href: "#week", label: "The week" },
   { href: "#onebridge", label: "OneBridge" },
   { href: "#photos", label: "Photos" },
+  { href: "#presentation", label: "Presentation" },
 ];
 
 /** Transparent over the hero, solid once the hero has scrolled away. */

@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { usePageMotion } from "./lib/usePageMotion";
 import { Coaches } from "./sections/Coaches";
+import { FinalPresentation } from "./sections/FinalPresentation";
 import { Group } from "./sections/Group";
 import { Header } from "./sections/Header";
 import { Hero } from "./sections/Hero";
@@ -28,6 +29,7 @@ export default function App() {
         <Week />
         <OneBridge />
         <Photos />
+        <FinalPresentation />
         <Thanks />
       </main>
     </div>

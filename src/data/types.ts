@@ -37,6 +37,11 @@ export interface TeamMember extends Person {
   flag?: string;
   /** The country, used to count how many countries the team comes from. */
   country: string;
+  /**
+   * A hidden link on the portrait only (an Easter egg). Nothing on the card
+   * advertises it; clicking the photo opens this address in a new tab.
+   */
+  portraitLink?: string;
 }
 
 export interface Coach extends Person {
