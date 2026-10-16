@@ -101,8 +101,16 @@ export default defineConfig(({ mode }) => ({
   build: {
     // three.js is ~530 kB but loads on demand after first paint.
     chunkSizeWarningLimit: mode === "single" ? 900 : 600,
-    // The single-file build (npm run build:html) needs one script, so it keeps
-    // the 3D scene in the main bundle instead of a separate chunk.
-    rolldownOptions: mode === "single" ? { output: { codeSplitting: false } } : {},
+    rolldownOptions: {
+      // Two pages: the team site, and the penalty mini game at /penalty-club/.
+      // The single-file builds take one page each and keep everything in one
+      // script (the 3D scene included) instead of separate chunks.
+      input: (mode === "single"
+          ? { main: path.join(root, "index.html") }
+          : mode === "game"
+            ? { game: path.join(root, "penalty-club/index.html") }
+            : { main: path.join(root, "index.html"), game: path.join(root, "penalty-club/index.html") }) as Record<string, string>,
+      ...(mode === "single" || mode === "game" ? { output: { codeSplitting: false } } : {}),
+    },
   },
 }));

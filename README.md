@@ -27,7 +27,15 @@ Built with React, Vite and TypeScript, plain CSS, three.js for the hero animatio
 | OneBridge | The problem as a scroll story, how it works, how we built it, pricing, links | `onebridge`, `presentation` |
 | Photos | Every event photo, with a lightbox | `gallery` |
 | Our final presentation | The recording of the final-round pitch and Q&A, played from YouTube | `finalVideo` |
-| Thank you | Acknowledgments and a one-line footer | `gratitude` |
+| Thank you | Acknowledgments, a link to the mini game, and a one-line footer | `gratitude`, `miniGame` |
+
+### The mini game: OneBridge Penalty Club
+
+A separate page at `/penalty-club/` (source in `penalty-club/index.html` and `src/penalty/`): a five-kick
+penalty shootout where you take the penalties or go in goal as any of the ten. Students wear their home
+country's shirt and the coaches wear a Southwestern Pirates shirt, all drawn in code with no real crests. Faces
+come from the portraits in `public/images`. Every player has the same total of stats, just spread differently
+(`src/penalty/players.ts`). It is plain TypeScript on a 2D canvas, with sounds synthesized in the browser.
 
 ---
 

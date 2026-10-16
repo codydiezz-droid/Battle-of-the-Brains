@@ -466,6 +466,13 @@ export const finalVideo = {
   poster: photos.presenting,
 };
 
+/** The penalty shootout mini game, a separate page linked from the end of the site. */
+export const miniGame = {
+  name: "OneBridge Penalty Club",
+  url: "./penalty-club/",
+  blurb: "A penalty shootout starring the seven of us and our coaches. Take the kicks or go in goal.",
+};
+
 /** The final pitch deck, in public/presentation/. */
 export const presentation: Presentation = {
   pptx: "/presentation/SU-OneBridge-Final-Pitch.pptx",

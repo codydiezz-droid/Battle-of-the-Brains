@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>OneBridge Penalty Club</title>
+    <meta
+      name="description"
+      content="A penalty shootout mini game starring the seven Southwestern University students and three coaches who built OneBridge at the 2026 HSI Battle of the Brains."
+    />
+    <meta name="theme-color" content="#050f24" />
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  </head>
+  <body data-site-url="../">
+    <main>
+    <canvas id="pitch" tabindex="-1" role="img" aria-label="A football pitch at night, seen from the penalty spot, with a goalkeeper in goal."></canvas>
+
+    <!-- Title -->
+    <section id="title" class="screen screen-center" aria-labelledby="title-h">
+      <div class="panel title-panel">
+        <svg class="mark" viewBox="0 0 64 24" aria-hidden="true">
+          <defs>
+            <linearGradient id="pc-arc" x1="0" x2="1">
+              <stop offset="0" stop-color="#3d8bff" />
+              <stop offset="0.5" stop-color="#dfe9ff" />
+              <stop offset="1" stop-color="#f68835" />
+            </linearGradient>
+          </defs>
+          <path d="M4 21 C 18 2, 46 2, 60 21" fill="none" stroke="url(#pc-arc)" stroke-width="4" stroke-linecap="round" />
+        </svg>
+        <p class="kicker">Southwestern University · HSI Battle of the Brains 2026</p>
+        <h1 id="title-h">OneBridge Penalty Club</h1>
+        <p class="lede">Seven students, three coaches, five penalties. Pick a side of the ball.</p>
+        <div class="choices">
+          <button type="button" class="choice" data-role="striker" data-autofocus>
+            <span class="choice-title">Take the penalties</span>
+            <span class="choice-sub">Aim, time your strike, beat the keeper.</span>
+          </button>
+          <button type="button" class="choice" data-role="keeper">
+            <span class="choice-title">Go in goal</span>
+            <span class="choice-sub">Read the striker and dive the right way.</span>
+          </button>
+        </div>
+        <details class="how">
+          <summary>How to play</summary>
+          <p><strong>Striker:</strong> move to aim at the goal and tap (or press Space) to lock it. A power bar starts moving: tap again when the marker is in the gold zone. Too hard and it flies over.</p>
+          <p><strong>Keeper:</strong> tap where you think the ball is going. Tap after the kick to react, or guess early and risk being read. Keys: arrows for low corners and the middle, Q and E for top corners.</p>
+        </details>
+        <a class="back" data-site-link href="../">← Back to the Southwestern team site</a>
+      </div>
+    </section>
+
+    <!-- Player select -->
+    <section id="select" class="screen" aria-labelledby="select-title" hidden>
+      <div class="select-inner">
+        <div class="select-head">
+          <button type="button" id="back-title" class="link-btn">← Back</button>
+          <h2 id="select-title">Pick your penalty taker</h2>
+          <p class="select-sub">Students wear their home country’s shirt. Coaches wear the Southwestern Pirates shirt.</p>
+        </div>
+        <div id="players" class="cards"></div>
+        <div class="select-foot">
+          <p class="opp">
+            <span id="opp-role">In goal</span>: <strong id="opp-name"></strong>
+            <button type="button" id="shuffle" class="link-btn">Shuffle</button>
+          </p>
+          <button type="button" id="kickoff" class="btn">Kick off</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- In-game HUD -->
+    <section id="hud" class="screen hud" aria-label="Match" hidden>
+      <div class="hud-top">
+        <div class="hud-card" id="hud-you">
+          <img alt="" width="44" height="44" />
+          <span><span class="hud-name"></span><span class="hud-role"></span></span>
+        </div>
+        <div class="hud-score">
+          <span id="round"></span>
+          <span id="dots" class="dots"></span>
+        </div>
+        <div class="hud-card hud-card-right" id="hud-opp">
+          <img alt="" width="44" height="44" />
+          <span><span class="hud-name"></span><span class="hud-role"></span></span>
+        </div>
+      </div>
+      <div id="banner" class="banner" hidden></div>
+      <div class="hud-bottom">
+        <div id="power" class="power" hidden aria-hidden="true">
+          <span class="power-sweet"></span>
+          <span id="power-marker" class="power-marker"></span>
+        </div>
+        <p id="hint" class="hint"></p>
+        <div class="hud-tools">
+          <button type="button" id="mute" class="tool">Sound on</button>
+          <button type="button" id="quit" class="tool">Quit</button>
+        </div>
+      </div>
+      <p id="live" class="sr-only" aria-live="polite"></p>
+    </section>
+
+    <!-- End -->
+    <section id="end" class="screen screen-center" aria-labelledby="end-line" hidden>
+      <div class="panel end-panel">
+        <p class="kicker" id="end-who"></p>
+        <p class="end-score"><span id="end-score"></span> <span id="end-label" class="end-label"></span></p>
+        <h2 id="end-line"></h2>
+        <div class="end-actions">
+          <button type="button" id="again" class="btn" data-autofocus>Play again</button>
+          <button type="button" id="switch" class="btn btn-quiet">Switch sides</button>
+          <button type="button" id="change" class="btn btn-quiet">Change player</button>
+        </div>
+        <a class="back" data-site-link href="../">← Back to the Southwestern team site</a>
+      </div>
+    </section>
+
+    </main>
+    <script type="module" src="/src/penalty/main.ts"></script>
+  </body>
+</html>
