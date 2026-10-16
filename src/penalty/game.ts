@@ -16,7 +16,7 @@ import {
   DoubleSide,
 } from "three";
 import { DIFF, KeeperBrain, ShooterBrain, gauss, keeperDiveTime, keeperMaxLat, type Difficulty, type ShotPlan } from "./ai";
-import { RUNUP, keeperPose, newKeeper, newShooter, shooterPose, type KeeperState, type ShooterState } from "./anim";
+import { KEEPER_Z, RUNUP, keeperPose, newKeeper, newShooter, shooterPose, type KeeperState, type ShooterState } from "./anim";
 import * as sfx from "./audio";
 import { Avatar, type Pose } from "./avatar";
 import { CELEBRATION_SECONDS, celebrationPose, loserPose } from "./celebrations";
@@ -70,6 +70,17 @@ export interface KickResult {
 type Phase = "idle" | "aim" | "ready" | "runup" | "flight" | "result" | "replay" | "celebrate";
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+
+/**
+ * Save assist for a human keeper, in metres: a shot that arrives within `dive`
+ * of where you dived (or along the line of the dive) is saved, and so is one
+ * within `stand` of your body when you stay on your feet.
+ */
+const ASSIST: Record<Difficulty, { dive: number; stand: number }> = {
+  easy: { dive: 1.8, stand: 1.3 },
+  medium: { dive: 1.5, stand: 1.1 },
+  hard: { dive: 1.2, stand: 0.9 },
+};
 
 
 interface Frame {
@@ -671,6 +682,7 @@ export class Engine {
         this.poseKeeper(simStepT);
         this.keeperAv!.root.updateMatrixWorld(true);
         this.keeperAv!.hitSpheres(this.spheres);
+        if (this.role === "keep") this.saveAssist(simStepT);
         stepBall(this.ball, this.spheres, this.events);
         if (this.events.length) this.handleEvents(simStepT);
       }
@@ -691,6 +703,47 @@ export class Engine {
       });
       if (this.record.length > 600) this.record.shift();
     }
+  }
+
+  /** A human keeper who reads the shot roughly right makes the save. */
+  private saveAssist(t: number) {
+    const b = this.ball;
+    if (!b.active || b.saved || b.crossed || b.v.z >= 0) return;
+    // Only at the moment the ball reaches the keeper
+    if (b.p.z < KEEPER_Z || b.p.z + b.v.z * STEP > KEEPER_Z + 0.25) return;
+    const x = b.p.x;
+    const y = b.p.y;
+    // Shots heading wide or over stay misses
+    if (Math.abs(x) > GOAL_HALF + 0.05 || y > GOAL_H + 0.05) return;
+    const reach = ASSIST[this.difficulty];
+    const d = this.keeper.dive;
+    let save = false;
+    let handX = this.keeper.x;
+    if (d && t >= d.start) {
+      const near = Math.hypot(x - d.tx, (y - d.ty) * 0.6) < reach.dive;
+      // Anywhere along the line of the dive, at a height the body covers
+      const lo = Math.min(d.fromX, d.tx) - 0.35;
+      const hi = Math.max(d.fromX, d.tx) + 0.35;
+      const along = x >= lo && x <= hi && y < Math.max(d.ty, 0.9) + 0.9;
+      save = near || along;
+      handX = d.tx;
+      if (save) {
+        // Send the gloves to the ball
+        d.tx = x;
+        d.ty = y;
+      }
+    } else if (!d) {
+      save = Math.abs(x - this.keeper.x) < reach.stand && y < 2.05;
+    }
+    if (!save) return;
+    // Parry: the ball comes back out and away from the gloves
+    const away = Math.sign(x - handX) || (Math.random() < 0.5 ? -1 : 1);
+    b.v.set(b.v.x * 0.25 + away * 2.6, Math.abs(b.v.y) * 0.3 + 2.2, Math.abs(b.v.z) * 0.28);
+    b.p.z = KEEPER_Z + 0.25;
+    b.spin = 0;
+    b.saved = true;
+    this.events.push("save");
+    this.handleEvents(t);
   }
 
   private poseKeeper(t: number) {

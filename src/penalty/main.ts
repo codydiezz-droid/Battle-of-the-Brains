@@ -525,6 +525,7 @@ function offlineWinner(result: "you" | "cpu" | "done"): { winner: Celebrant; los
 
 function finishMatch(result: "you" | "cpu" | "done") {
   match.over = true;
+  $("#status").textContent = "Full time";
   const w = offlineWinner(result);
   if (!w) return endMatch(result);
   const run = (id: string) => playCelebration(w.winner, w.loser, id, () => endMatch(result));
@@ -1322,6 +1323,7 @@ function onlineWinnerSide(result: Side | "done"): Side {
 function finishOnline(result: Side | "done") {
   if (!net) return;
   net.over = true;
+  $("#status").textContent = "Full time";
   engine.holdShot = false;
   const duel = settings().format === "duel";
   const win = onlineWinnerSide(result);
