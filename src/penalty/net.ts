@@ -3,10 +3,11 @@
  * player's "presence": one small object describing their current state
  * (absolute values, never deltas), which the other side reads.
  *
- * Two transports:
- *  - the claude.ai artifact `room` capability (live, across devices), and
- *  - BroadcastChannel, for two windows on the same device (used for testing,
- *    and as a fallback where the room is unavailable).
+ * Three transports, tried in order:
+ *  - the claude.ai artifact `room` capability, when the page runs as an artifact;
+ *  - direct peer-to-peer (WebRTC, via Trystero with public Nostr relays for the
+ *    handshake), so the game works anywhere it is hosted, independent of Claude;
+ *  - BroadcastChannel, for two windows on the same device (testing, `?local`).
  */
 
 export type Presence = Record<string, unknown>;
@@ -19,7 +20,7 @@ export interface NetPeer {
 
 export interface NetRoom {
   readonly code: string;
-  readonly transport: "live" | "local";
+  readonly transport: "live" | "p2p" | "local";
   setPresence(patch: Presence): void;
   peers(): NetPeer[];
   onPeers(fn: (peers: NetPeer[]) => void): () => void;
@@ -62,6 +63,63 @@ async function joinLive(code: string): Promise<NetRoom | null> {
     peers: () => map(named.peers()),
     onPeers: (fn) => named.onPeers((c) => fn(map(c.peers))),
     leave: () => void named.leave().catch(() => {}),
+  };
+}
+
+/* ───────────────────────────── Peer to peer ───────────────────────────── */
+
+async function joinP2P(code: string): Promise<NetRoom> {
+  const { joinRoom: joinTrystero, selfId } = await import("trystero");
+  const room = joinTrystero({ appId: "onebridge-penalty-club" }, `pc-${code.toLowerCase()}`);
+  // Presence travels as JSON text
+  const pres = room.makeAction<string>("pres");
+  let mine: Presence = {};
+  const others = new Map<string, Presence>();
+  const listeners = new Set<(p: NetPeer[]) => void>();
+  const list = (): NetPeer[] => [
+    { id: selfId, isMe: true, presence: mine },
+    ...[...others].map(([id, presence]) => ({ id, isMe: false, presence })),
+  ];
+  const notify = () => listeners.forEach((fn) => fn(list()));
+  const send = (target?: string) => void pres.send(JSON.stringify(mine), target ? { target } : undefined).catch(() => {});
+  pres.onMessage = (text, { peerId }) => {
+    let data: unknown;
+    try {
+      data = JSON.parse(String(text));
+    } catch {
+      return;
+    }
+    if (!data || typeof data !== "object" || Array.isArray(data)) return;
+    others.set(peerId, data as Presence);
+    notify();
+  };
+  room.onPeerJoin = (peerId) => send(peerId);
+  room.onPeerLeave = (peerId) => {
+    others.delete(peerId);
+    notify();
+  };
+  // Resend now and then, in case a message was lost
+  const beat = window.setInterval(() => send(), 2500);
+  return {
+    code,
+    transport: "p2p",
+    setPresence(patch) {
+      mine = { ...mine, ...patch };
+      for (const k of Object.keys(patch)) if (patch[k] === null) delete mine[k];
+      send();
+      notify();
+    },
+    peers: list,
+    onPeers(fn) {
+      listeners.add(fn);
+      queueMicrotask(() => fn(list()));
+      return () => listeners.delete(fn);
+    },
+    leave() {
+      window.clearInterval(beat);
+      listeners.clear();
+      void room.leave().catch(() => {});
+    },
   };
 }
 
@@ -127,14 +185,21 @@ function joinLocal(code: string): NetRoom {
   };
 }
 
-/** Join a game by code: live when the artifact room is available, else same-device. */
+/** Join a game by code: the artifact room if available, else peer to peer, else same-device. */
 export async function joinRoom(code: string, preferLocal = false): Promise<NetRoom> {
   if (!preferLocal) {
     try {
       const live = await joinLive(code);
       if (live) return live;
     } catch {
-      /* fall back to same-device */
+      /* try peer to peer */
+    }
+    if (typeof RTCPeerConnection !== "undefined") {
+      try {
+        return await joinP2P(code);
+      } catch {
+        /* fall back to same-device */
+      }
     }
   }
   return joinLocal(code);

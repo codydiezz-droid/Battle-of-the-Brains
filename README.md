@@ -41,11 +41,24 @@ A separate page at `/penalty-club/`: a 3D penalty shootout built with three.js. 
 - **Choose everyone:** pick your penalty taker and keeper and the opponent's taker and keeper (or leave
   the opponents on Random).
 - **Stadium:** tiered end stands full of blocky fans (instanced, so it stays fast), and LED boards and a roof
-  fascia carrying the event sponsors: The Home Depot, CrowdStrike, Dell and eBay, alongside OneBridge,
+  fascia carrying the event sponsors: The Home Depot, CrowdStrike, Dell, Thrivent and eBay, alongside OneBridge,
   Southwestern and HSI Battle of the Brains. The sponsor marks are simplified versions drawn in code in each
   brand's colours (`src/penalty/sponsors.ts`); swap in official artwork if the sponsors provide it.
 - **Modes:** Penalty Challenge (5 shots), Goalkeeper Challenge (5 saves), Full Shootout (alternating, five
-  each, early finish when one side cannot catch up, then sudden death) and Practice.
+  each, early finish when one side cannot catch up, then sudden death), Practice and Play online.
+- **Who wins a five-kick duel:** the striker needs 4 goals; 2 stops (saves, posts or misses) win it for
+  the keeper.
+- **Celebrations** (`celebrations.ts`): the winner picks one of ten famous celebrations (SIUUU, knee slide,
+  airplane, arms crossed, point to the sky, heart hands, shush, victory dance, zen, backflip) and plays it
+  in front of the goal while the loser sinks to their knees. The CPU picks its own when it wins.
+- **Progression** (`progress.ts`): XP from every match, levels that unlock celebrations, ten achievements,
+  a daily streak, a trophy room and a share button.
+- **Play online** (`net.ts`): one player creates a game and shares a 4-character code; the other joins.
+  Striker vs keeper or a full shootout. Players connect directly browser to browser (WebRTC through
+  [Trystero](https://github.com/dmotz/trystero), using public Nostr relays only for the handshake), so it
+  needs no server and works on GitHub Pages. Inside a claude.ai artifact it uses the artifact's room
+  instead. Add `?local` to test with two windows on one computer. Some school or office networks block
+  direct connections.
 - **Shooting:** aim with the mouse or arrows, hold Space or the mouse button to charge, release to strike,
   Q / E to curve. The gold zone gives the cleanest strike; overpowered shots spray and rise.
 - **Goalkeeping:** A / D to step across, arrows or mouse to pick the dive (Up for high), Space or click to

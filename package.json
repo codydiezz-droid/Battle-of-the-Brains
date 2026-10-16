@@ -20,7 +20,8 @@
     "lucide-react": "^1.49.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "three": "^0.186.1"
+    "three": "^0.186.1",
+    "trystero": "0.25.4"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",

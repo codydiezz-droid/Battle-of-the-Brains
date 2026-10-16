@@ -982,7 +982,11 @@ async function joinAs(code: string, host: boolean) {
   room.onPeers((peers) => onPeers(peers));
   $("#lobby-code").textContent = code;
   $("#lobby-transport").textContent =
-    room.transport === "live" ? "Live · connected through claude.ai" : "Same device · open this page in a second window to test";
+    room.transport === "live"
+      ? "Live · connected through claude.ai"
+      : room.transport === "p2p"
+        ? "Live · direct connection between your browsers"
+        : "Same device · open this page in a second window to test";
   syncLobbySettings();
   renderLobby();
   show("lobby");
@@ -1032,7 +1036,9 @@ function renderLobby() {
         ? "Both ready. Start when you like."
         : "Pick your players, then both press Ready."
       : "Waiting for the host to start."
-    : `Share the code ${net.room.code} with your friend. They open this page, choose Play online and join.`;
+    : `Share the code ${net.room.code} with your friend. They open this page, choose Play online and join.${
+        net.room.transport === "p2p" ? " If they can’t connect, try another network: some school and office Wi-Fi blocks direct connections." : ""
+      }`;
   $("#lobby-settings").hidden = !net.host;
   const s = settings();
   const meStart = s.hostRole === "shoot" ? (net.host ? "striker" : "goalkeeper") : net.host ? "goalkeeper" : "striker";
