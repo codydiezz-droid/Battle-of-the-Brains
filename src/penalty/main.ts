@@ -4,7 +4,7 @@ import "./penalty.css";
 import { DIFF } from "./ai";
 import * as sfx from "./audio";
 import { Engine, type KickResult, type Role, type SentDive, type SentResult, type Shot } from "./game";
-import { joinRoom, newCode, type NetPeer, type NetRoom } from "./net";
+import { joinRoom, newCode, warmUp, type NetPeer, type NetRoom } from "./net";
 import { byId, roster, type Player } from "./players";
 import { persist, save } from "./storage";
 import { cardPortrait } from "./textures";
@@ -1540,6 +1540,9 @@ $("#lobby-invite").addEventListener("click", async () => {
 engine.setCast(byId(save.shooterId), byId(save.keeperId));
 syncMenu();
 show("menu");
+
+// Fetch the online code in the background, so joining a game is quick
+(window.requestIdleCallback ?? ((fn: () => void) => window.setTimeout(fn, 1500)))(() => warmUp());
 
 // Opened from an invite link: go straight into that game
 const invited = new URLSearchParams(location.search).get("join")?.toUpperCase().replace(/[^A-Z0-9]/g, "") ?? "";

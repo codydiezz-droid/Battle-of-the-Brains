@@ -226,8 +226,11 @@ async function relayRoute(code: string, urls: string[]): Promise<Route> {
       prev.seen = Date.now();
       return;
     }
+    const isNew = !prev;
     others.set(id, { presence: data as Presence, seen: Date.now() });
     listener();
+    // A newcomer: answer straight away rather than at the next heartbeat
+    if (isNew) schedule();
   };
 
   const connect = (url: string, delay = 0) => {
@@ -346,7 +349,7 @@ const mqttStr = (s: string) => {
 };
 const mqttPacket = (type: number, body: number[]) => new Uint8Array([type, ...mqttLen(body.length), ...body]);
 
-function mqttRoute(code: string, urls: string[]): Route {
+function mqttRoute(code: string, urls: string[], selfId: string): Route {
   const topic = `onebridge-penalty-club/v1/${code.toLowerCase()}`;
   const clientId = `pc${Math.random().toString(36).slice(2, 12)}`;
   const others = new Map<string, { presence: Presence; seen: number }>();
@@ -365,19 +368,26 @@ function mqttRoute(code: string, urls: string[]): Route {
     }
     if (!data || typeof data !== "object" || Array.isArray(data)) return;
     const id = (data as Presence).cid;
-    if (typeof id !== "string" || id === mine.cid) return;
+    if (typeof id !== "string" || id === selfId) return;
+    // A retained message from a player who left a while ago
+    const at = Number((data as Presence).at);
+    if (at && Date.now() - at > 30000) return;
     const prev = others.get(id);
     if (prev && Number((data as Presence).seq) < Number(prev.presence.seq)) {
       prev.seen = Date.now();
       return;
     }
+    const isNew = !prev;
     others.set(id, { presence: data as Presence, seen: Date.now() });
     listener();
+    // A newcomer: answer straight away rather than at the next heartbeat
+    if (isNew) flushSoon();
   };
 
+  // Retained: the broker keeps the latest state and hands it to anyone who subscribes later
   const publishTo = (ws: WebSocket) => {
-    const body = [...mqttStr(topic), ...enc.encode(JSON.stringify(mine))];
-    ws.send(mqttPacket(0x30, body));
+    const body = [...mqttStr(topic), ...enc.encode(JSON.stringify({ ...mine, at: Date.now() }))];
+    ws.send(mqttPacket(0x31, body));
   };
 
   const connect = (url: string, delay = 0) => {
@@ -450,6 +460,7 @@ function mqttRoute(code: string, urls: string[]): Route {
   // At most a few sends a second, always the latest state
   let lastSent = 0;
   let queued = 0;
+  const flushSoon = () => schedule();
   const flush = () => {
     for (const ws of ready) if (ws.readyState === 1) publishTo(ws);
     lastSent = Date.now();
@@ -471,7 +482,7 @@ function mqttRoute(code: string, urls: string[]): Route {
         changed = true;
       }
     if (changed) listener();
-  }, 3000);
+  }, 2000);
 
   return {
     name: "mqtt",
@@ -488,6 +499,8 @@ function mqttRoute(code: string, urls: string[]): Route {
       window.clearTimeout(queued);
       for (const ws of sockets.values()) {
         try {
+          // Clear our retained state, then disconnect
+          ws.send(mqttPacket(0x31, [...mqttStr(topic)]));
           ws.send(new Uint8Array([0xe0, 0]));
         } catch {
           /* already closed */
@@ -556,36 +569,15 @@ function localRoute(code: string): Route {
  * test switch) uses just the same-device channel.
  */
 export async function joinRoom(code: string, localOnly = false): Promise<NetRoom> {
-  const routes: Route[] = [localRoute(code)];
-  if (!localOnly) {
-    const params = new URLSearchParams(location.search);
-    const testRelay = params.get("relay");
-    const testBroker = params.get("broker");
-    const [claude, p2p, relay] = await Promise.all([
-      claudeRoute(code).catch(() => null),
-      testRelay ? Promise.resolve([] as Route[]) : p2pRoutes(code).catch(() => [] as Route[]),
-      relayRoute(code, testRelay ? [testRelay] : NOSTR_RELAYS).catch(() => null),
-    ]);
-    if (claude) routes.push(claude);
-    routes.push(...p2p);
-    if (relay) routes.push(relay);
-    try {
-      routes.push(mqttRoute(code, testBroker ? [testBroker] : MQTT_BROKERS));
-    } catch {
-      /* unavailable here */
-    }
-  }
+  const params = new URLSearchParams(location.search);
   // ?only=mqtt (or relay, nostr, torrent, comma-separated) keeps just those routes, for testing
-  const only = new URLSearchParams(location.search).get("only");
-  if (only) {
-    const keep = only.split(",");
-    for (const r of routes.filter((x) => !keep.includes(x.name))) r.leave();
-    routes.splice(0, routes.length, ...routes.filter((x) => keep.includes(x.name)));
-  }
+  const only = params.get("only")?.split(",") ?? null;
+  const routes: Route[] = [];
   const cid = Math.random().toString(36).slice(2, 12);
   let seq = 0;
   let mine: Presence = { cid, seq };
   const listeners = new Set<(p: NetPeer[]) => void>();
+  let left = false;
 
   /** Everyone heard on any route, once each, newest state winning. */
   const list = (): NetPeer[] => {
@@ -603,14 +595,46 @@ export async function joinRoom(code: string, localOnly = false): Promise<NetRoom
     const l = list();
     listeners.forEach((fn) => fn(l));
   };
-  for (const r of routes) r.onChange(notify);
+  /** Routes join as soon as each is ready; nobody waits for the slowest. */
+  const add = (r: Route | null) => {
+    if (!r) return;
+    if (left || (only && !only.includes(r.name))) return r.leave();
+    routes.push(r);
+    r.onChange(notify);
+    r.send(mine);
+  };
   const sendAll = () => routes.forEach((r) => r.send(mine));
   // Resend now and then, in case a message was lost on the way
   const beat = window.setInterval(sendAll, 2500);
 
+  // The fast routes start at once...
+  add(localRoute(code));
+  if (!localOnly) {
+    const testRelay = params.get("relay");
+    const testBroker = params.get("broker");
+    try {
+      add(mqttRoute(code, testBroker ? [testBroker] : MQTT_BROKERS, cid));
+    } catch {
+      /* unavailable here */
+    }
+    // ...the others load their code in the background and join when ready
+    void relayRoute(code, testRelay ? [testRelay] : NOSTR_RELAYS)
+      .then(add)
+      .catch(() => {});
+    void claudeRoute(code)
+      .then(add)
+      .catch(() => {});
+    if (!testRelay)
+      void p2pRoutes(code)
+        .then((rs) => rs.forEach(add))
+        .catch(() => {});
+  }
+
   return {
     code,
-    transports: routes.map((r) => r.name),
+    get transports() {
+      return routes.map((r) => r.name);
+    },
     setPresence(patch) {
       const next: Presence = { ...mine, ...patch, cid, seq: ++seq };
       for (const k of Object.keys(patch)) if (patch[k] === null) delete next[k];
@@ -646,11 +670,19 @@ export async function joinRoom(code: string, localOnly = false): Promise<NetRoom
       });
     },
     leave() {
+      left = true;
       window.clearInterval(beat);
       listeners.clear();
       routes.forEach((r) => r.leave());
     },
   };
+}
+
+/** Fetch the online code in the background (while the menu is up), so joining is instant. */
+export function warmUp() {
+  void import("@noble/secp256k1").catch(() => {});
+  void import("@trystero-p2p/nostr").catch(() => {});
+  void import("@trystero-p2p/torrent").catch(() => {});
 }
 
 /** A short, easy-to-say game code. */
