@@ -8,7 +8,7 @@ business solution.
 > This is a student-created team website. It is not an official website of Southwestern University or
 > HSI Battle of the Brains.
 
-Built with React, Vite and TypeScript, plain CSS, three.js for the hero animation, and Lucide icons. Fonts
+Built with React, Vite and TypeScript, plain CSS, a 2D canvas for the hero animation, three.js for the mini game only, and Lucide icons. Fonts
 (Schibsted Grotesk and Public Sans) are bundled with the site, so it makes no requests to font services.
 
 **Live site:** https://codydiezz-droid.github.io/southwestern-botb-2026/
@@ -19,7 +19,7 @@ Built with React, Vite and TypeScript, plain CSS, three.js for the hero animatio
 
 | Section | What it shows | Where the content lives |
 | --- | --- | --- |
-| Hero | Headline, award line, and a three.js bridge of light | `src/sections/Hero.tsx`, `result` and `event` in `siteData.ts` |
+| Hero | Headline, award line, and an animated bridge of light (2D canvas) | `src/sections/Hero.tsx`, `result` and `event` in `siteData.ts` |
 | Group photo and facts | The team and coaches, then five facts | `groupPhoto`, `src/sections/Group.tsx` |
 | Meet the seven | A card for each student: portrait, home country, bio, LinkedIn | `team` |
 | The coaches | Portrait, LinkedIn and Southwestern profile | `coaches`, `coachesIntro` |
@@ -53,16 +53,18 @@ A separate page at `/penalty-club/`: a 3D penalty shootout built with three.js. 
   in front of the goal while the loser sinks to their knees. The CPU picks its own when it wins.
 - **Progression** (`progress.ts`): XP from every match, levels that unlock celebrations, ten achievements,
   a daily streak, a trophy room and a share button.
-- **Play online** (`net.ts`): one player creates a game and shares a 4-character code; the other joins.
-  Striker vs keeper or a full shootout. A game joins every route at once and merges them, so both
-  players meet even if one route is blocked: direct browser-to-browser WebRTC through
-  [Trystero](https://github.com/dmotz/trystero), introduced by two independent public networks (Nostr
-  relays and WebTorrent trackers); the same Nostr relays, and public MQTT brokers, carrying the game messages themselves, for
-  networks that block direct links (school Wi-Fi, mobile data); the claude.ai artifact room when it runs
-  as an artifact; and a
-  same-device channel for two windows on one computer. No server needed, so it works on GitHub Pages.
-  The lobby shows how many servers each network can reach, which one the friend was heard on, and the build. Add `?local` to test on one computer only.
-  Some school or office networks block direct connections; a phone hotspot usually works.
+- **Play online** (`net.ts`): one player creates a game and taps **Send invite link**; the friend opens
+  it and joins straight away (or types the 4-character code). Striker vs keeper or a full shootout.
+  A game joins every route at once and merges them, so both players meet even if one is blocked:
+  public MQTT brokers and Nostr relays carry the game messages (both work through school Wi-Fi and
+  mobile data, and connect in about 2 s), the claude.ai artifact room when it runs as an artifact, and a
+  same-device channel for two windows on one computer. No server of our own, so it works on GitHub
+  Pages. The lobby's small print shows each network's reach, where the friend was heard, and the build.
+  Add `?local` to test on one computer only.
+- **Performance first** (see [docs/GAUNTLET.md](docs/GAUNTLET.md)): soft blob shadows instead of a
+  shadow-map pass, merged stand meshes, no antialiasing and at most 1.25x pixels on phones (with half the
+  crowd), resolution that scales itself down on slow devices, shaders compiled in the background, and
+  the scene drawn gently or frozen behind menus and the online lobby.
 - **Shooting:** aim with the mouse or arrows, hold Space or the mouse button to charge, release to strike,
   Q / E to curve. The gold zone gives the cleanest strike; overpowered shots spray and rise.
 - **Goalkeeping:** A / D to step across, arrows or mouse to pick the dive (Up for high), Space or click to
@@ -105,7 +107,7 @@ src/
     siteData.ts    ← ★ THE FILE YOU EDIT: people, bios, the week, photos, OneBridge, settings
     types.ts       ← what each entry in siteData.ts can contain
   sections/        ← one file per page section
-  components/      ← the 3D hero, OneBridge story, gallery and photo pieces
+  components/      ← the animated hero, OneBridge story, gallery and photo pieces
   lib/             ← small helpers (image paths, page motion)
   index.css        ← all styles, with the colours at the top
 ```
@@ -174,7 +176,7 @@ photos embedded. It works opened straight from your computer. The deck download 
 - **Colour:** Southwestern black, gold `#ffb81c` and cream `#f7f3ea`. On cream, gold text uses the darker
   `#835600` to keep AA contrast. The OneBridge section switches to the product's navy, blue and orange.
 - **Motion:** sections fade up as they enter, timeline lines draw as you scroll, and photos drift slightly. The
-  three.js scene loads after first paint, pauses when off screen, and is skipped on data saver, low-memory
+  2D canvas animation loads after first paint, pauses when off screen, and is skipped on data saver, low-memory
   devices and for visitors with "Reduce motion" on (a static arc is shown instead). Reduced motion turns off
   every animation.
 - **Access:** a skip link, visible two-tone focus rings, alt text on every photo, labelled new-tab links, and a
