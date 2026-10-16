@@ -1108,6 +1108,14 @@ function syncTransport() {
   else if (total && up === 0) text = "Connecting to the online servers…";
   else text = `Online · ${up} of ${total} servers reachable · waiting for your friend`;
   $("#lobby-transport").textContent = text;
+  // Small print: each network's reach, and where the friend was heard (helps fix connection problems)
+  const label: Record<string, string> = { nostr: "Direct (Nostr)", torrent: "Direct (trackers)", relay: "Relays", mqtt: "Brokers", claude: "claude.ai", local: "This device" };
+  $("#lobby-diag").textContent =
+    r
+      .status()
+      .filter((x) => x.name !== "local" || x.heard)
+      .map((x) => `${label[x.name] ?? x.name} ${x.total ? `${x.up}/${x.total}` : ""}${x.heard ? " ✓" : ""}`.trim())
+      .join(" · ") + ` · build ${__BUILD__}`;
 }
 
 function onPeers(peers: NetPeer[]) {

@@ -57,11 +57,11 @@ A separate page at `/penalty-club/`: a 3D penalty shootout built with three.js. 
   Striker vs keeper or a full shootout. A game joins every route at once and merges them, so both
   players meet even if one route is blocked: direct browser-to-browser WebRTC through
   [Trystero](https://github.com/dmotz/trystero), introduced by two independent public networks (Nostr
-  relays and WebTorrent trackers); the same Nostr relays carrying the game messages themselves, for
+  relays and WebTorrent trackers); the same Nostr relays, and public MQTT brokers, carrying the game messages themselves, for
   networks that block direct links (school Wi-Fi, mobile data); the claude.ai artifact room when it runs
   as an artifact; and a
   same-device channel for two windows on one computer. No server needed, so it works on GitHub Pages.
-  The lobby shows how many signalling servers are reachable. Add `?local` to test on one computer only.
+  The lobby shows how many servers each network can reach, which one the friend was heard on, and the build. Add `?local` to test on one computer only.
   Some school or office networks block direct connections; a phone hotspot usually works.
 - **Shooting:** aim with the mouse or arrows, hold Space or the mouse button to charge, release to strike,
   Q / E to curve. The gold zone gives the cleanest strike; overpowered shots spray and rise.

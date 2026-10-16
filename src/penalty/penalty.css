@@ -1307,3 +1307,10 @@ h1 {
   animation: rise 0.35s var(--ease) both;
   pointer-events: none;
 }
+
+.lobby-diag {
+  margin: 14px 0 0;
+  font-size: 11px;
+  color: var(--dim);
+  opacity: 0.8;
+}

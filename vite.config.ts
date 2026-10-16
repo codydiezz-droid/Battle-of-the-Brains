@@ -98,6 +98,8 @@ export default defineConfig(({ mode }) => ({
   // subpath (https://<user>.github.io/<repo>/) and on a custom domain.
   base: "./",
   plugins: [react(), publicImages()],
+  // A build stamp, shown small in the game's online lobby to tell versions apart
+  define: { __BUILD__: JSON.stringify(new Date().toISOString().slice(5, 16).replace("T", " ")) },
   build: {
     // three.js is ~530 kB but loads on demand after first paint.
     chunkSizeWarningLimit: mode === "single" ? 900 : 600,

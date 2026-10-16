@@ -9,8 +9,9 @@
  *  - the claude.ai artifact `room` capability, when the page runs as an artifact;
  *  - direct peer-to-peer (WebRTC via Trystero), found through two independent
  *    public signalling networks: Nostr relays and WebTorrent trackers;
- *  - the same Nostr relays carrying the game messages themselves, for networks
- *    (school Wi-Fi, mobile data) where a direct browser-to-browser link fails;
+ *  - the same Nostr relays carrying the game messages themselves, and public
+ *    MQTT brokers doing the same, for networks (school Wi-Fi, mobile data)
+ *    where a direct browser-to-browser link fails;
  *  - BroadcastChannel, for two windows on the same device.
  * Each player tags their presence with a client id and a counter, so the same
  * player heard over two routes counts once, with the newest state winning.
@@ -33,6 +34,8 @@ export interface NetRoom {
   onPeers(fn: (peers: NetPeer[]) => void): () => void;
   /** How many public signalling servers this browser can reach right now. */
   servers(): { up: number; total: number };
+  /** Per route: servers reachable, and whether the other player is heard on it. */
+  status(): { name: string; up: number; total: number; heard: boolean }[];
   leave(): void;
 }
 
@@ -321,6 +324,184 @@ async function relayRoute(code: string, urls: string[]): Promise<Route> {
   };
 }
 
+/* ───────────────────────────── MQTT brokers ───────────────────────────── */
+
+const MQTT_BROKERS = ["wss://broker.emqx.io:8084/mqtt", "wss://broker.hivemq.com:8884/mqtt", "wss://test.mosquitto.org:8081/mqtt", "wss://broker-cn.emqx.io:8084/mqtt"];
+
+/*
+ * A minimal MQTT 3.1.1 client over WebSocket (connect, subscribe, publish at
+ * QoS 0, keep-alive): enough to pass presence through public brokers.
+ */
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+function mqttLen(n: number) {
+  const out: number[] = [];
+  do {
+    let b = n % 128;
+    n = Math.floor(n / 128);
+    if (n > 0) b |= 128;
+    out.push(b);
+  } while (n > 0);
+  return out;
+}
+const mqttStr = (s: string) => {
+  const b = enc.encode(s);
+  return [b.length >> 8, b.length & 255, ...b];
+};
+const mqttPacket = (type: number, body: number[]) => new Uint8Array([type, ...mqttLen(body.length), ...body]);
+
+function mqttRoute(code: string, urls: string[]): Route {
+  const topic = `onebridge-penalty-club/v1/${code.toLowerCase()}`;
+  const clientId = `pc${Math.random().toString(36).slice(2, 12)}`;
+  const others = new Map<string, { presence: Presence; seen: number }>();
+  let listener = () => {};
+  let mine: Presence = {};
+  const sockets = new Map<string, WebSocket>();
+  const ready = new Set<WebSocket>();
+  let closed = false;
+
+  const onPublish = (payload: Uint8Array) => {
+    let data: unknown;
+    try {
+      data = JSON.parse(dec.decode(payload));
+    } catch {
+      return;
+    }
+    if (!data || typeof data !== "object" || Array.isArray(data)) return;
+    const id = (data as Presence).cid;
+    if (typeof id !== "string" || id === mine.cid) return;
+    const prev = others.get(id);
+    if (prev && Number((data as Presence).seq) < Number(prev.presence.seq)) {
+      prev.seen = Date.now();
+      return;
+    }
+    others.set(id, { presence: data as Presence, seen: Date.now() });
+    listener();
+  };
+
+  const publishTo = (ws: WebSocket) => {
+    const body = [...mqttStr(topic), ...enc.encode(JSON.stringify(mine))];
+    ws.send(mqttPacket(0x30, body));
+  };
+
+  const connect = (url: string, delay = 0) => {
+    window.setTimeout(() => {
+      if (closed) return;
+      let ws: WebSocket;
+      try {
+        ws = new WebSocket(url, "mqtt");
+      } catch {
+        return;
+      }
+      ws.binaryType = "arraybuffer";
+      sockets.set(url, ws);
+      let ping = 0;
+      let buf = new Uint8Array(0);
+      ws.onopen = () => {
+        // CONNECT: protocol "MQTT" level 4, clean session, 60 s keep-alive
+        ws.send(mqttPacket(0x10, [...mqttStr("MQTT"), 4, 0x02, 0, 60, ...mqttStr(clientId)]));
+        ping = window.setInterval(() => ws.readyState === 1 && ws.send(new Uint8Array([0xc0, 0])), 30000);
+      };
+      ws.onmessage = (m) => {
+        const chunk = new Uint8Array(m.data as ArrayBuffer);
+        const all = new Uint8Array(buf.length + chunk.length);
+        all.set(buf);
+        all.set(chunk, buf.length);
+        let i = 0;
+        // Split the stream into packets
+        for (;;) {
+          if (all.length - i < 2) break;
+          let len = 0;
+          let mul = 1;
+          let j = i + 1;
+          let byte: number;
+          do {
+            if (j >= all.length) break;
+            byte = all[j++];
+            len += (byte & 127) * mul;
+            mul *= 128;
+          } while (byte & 128);
+          if (j + len > all.length || (all[j - 1] & 128)) break;
+          const type = all[i] >> 4;
+          const body = all.subarray(j, j + len);
+          if (type === 2) {
+            // CONNACK: subscribe, then say hello
+            if (body[1] === 0) {
+              ws.send(mqttPacket(0x82, [0, 1, ...mqttStr(topic), 0]));
+              ready.add(ws);
+              publishTo(ws);
+            }
+          } else if (type === 3) {
+            const tl = (body[0] << 8) | body[1];
+            const qos = (all[i] >> 1) & 3;
+            onPublish(body.subarray(2 + tl + (qos ? 2 : 0)));
+          }
+          i = j + len;
+        }
+        buf = all.slice(i);
+      };
+      ws.onclose = () => {
+        window.clearInterval(ping);
+        ready.delete(ws);
+        if (sockets.get(url) === ws) sockets.delete(url);
+        if (!closed) connect(url, Math.min(30000, delay * 2 + 3000));
+      };
+      ws.onerror = () => ws.close();
+    }, delay);
+  };
+  urls.forEach((u) => connect(u));
+
+  // At most a few sends a second, always the latest state
+  let lastSent = 0;
+  let queued = 0;
+  const flush = () => {
+    for (const ws of ready) if (ws.readyState === 1) publishTo(ws);
+    lastSent = Date.now();
+  };
+  const schedule = () => {
+    if (queued) return;
+    queued = window.setTimeout(() => {
+      queued = 0;
+      flush();
+    }, Math.max(0, 150 - (Date.now() - lastSent)));
+  };
+  const beat = window.setInterval(() => {
+    schedule();
+    const now = Date.now();
+    let changed = false;
+    for (const [id, o] of others)
+      if (now - o.seen > 12000) {
+        others.delete(id);
+        changed = true;
+      }
+    if (changed) listener();
+  }, 3000);
+
+  return {
+    name: "mqtt",
+    send(p) {
+      mine = p;
+      schedule();
+    },
+    others: () => [...others.values()].map((o) => o.presence),
+    onChange: (fn) => (listener = fn),
+    servers: () => ({ up: ready.size, total: urls.length }),
+    leave() {
+      closed = true;
+      window.clearInterval(beat);
+      window.clearTimeout(queued);
+      for (const ws of sockets.values()) {
+        try {
+          ws.send(new Uint8Array([0xe0, 0]));
+        } catch {
+          /* already closed */
+        }
+        ws.close();
+      }
+    },
+  };
+}
+
 /* ───────────────────────────── Same device ───────────────────────────── */
 
 function localRoute(code: string): Route {
@@ -381,7 +562,9 @@ function localRoute(code: string): Route {
 export async function joinRoom(code: string, localOnly = false): Promise<NetRoom> {
   const routes: Route[] = [localRoute(code)];
   if (!localOnly) {
-    const testRelay = new URLSearchParams(location.search).get("relay");
+    const params = new URLSearchParams(location.search);
+    const testRelay = params.get("relay");
+    const testBroker = params.get("broker");
     const [claude, p2p, relay] = await Promise.all([
       claudeRoute(code).catch(() => null),
       testRelay ? Promise.resolve([] as Route[]) : p2pRoutes(code).catch(() => [] as Route[]),
@@ -390,6 +573,11 @@ export async function joinRoom(code: string, localOnly = false): Promise<NetRoom
     if (claude) routes.push(claude);
     routes.push(...p2p);
     if (relay) routes.push(relay);
+    try {
+      routes.push(mqttRoute(code, testBroker ? [testBroker] : MQTT_BROKERS));
+    } catch {
+      /* unavailable here */
+    }
   }
   const cid = Math.random().toString(36).slice(2, 12);
   let seq = 0;
@@ -447,6 +635,12 @@ export async function joinRoom(code: string, localOnly = false): Promise<NetRoom
         }
       }
       return { up, total };
+    },
+    status() {
+      return routes.map((r) => {
+        const s = r.servers?.() ?? { up: 0, total: 0 };
+        return { name: r.name, ...s, heard: r.others().some((p) => typeof p?.cid === "string" && p.cid !== cid) };
+      });
     },
     leave() {
       window.clearInterval(beat);

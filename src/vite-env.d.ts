@@ -5,3 +5,6 @@ declare module "virtual:public-images" {
   const images: Set<string>;
   export default images;
 }
+
+/** When this build was made (UTC, "MM-DD HH:MM"). */
+declare const __BUILD__: string;
