@@ -344,7 +344,7 @@ export const photos = {
       1600,
       794,
       "All seven students and the three coaches standing together in business attire on a stone terrace, with trees behind them.",
-      "All seven of us with Dr. Debika Sihi, Dr. Abby Dings, and Adrian D. Ramirez. Edited to bring the whole team into one photo.",
+      "Adrian D. Ramirez and Juan Carlos edited in with AI.",
     ),
     featured: true,
   },
