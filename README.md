@@ -38,6 +38,12 @@ A separate page at `/penalty-club/`: a 3D penalty shootout built with three.js. 
   faces, skin tone, hair and glasses are drawn as pixel art to match their portraits (`src/penalty/players.ts`,
   `textures.ts`, `avatar.ts`). Students wear their home country's shirt, coaches the Southwestern Pirates shirt,
   all drawn in code with no real crests. Every player has the same stat total, spread differently.
+- **Choose everyone:** pick your penalty taker and keeper and the opponent's taker and keeper (or leave
+  the opponents on Random).
+- **Stadium:** tiered end stands full of blocky fans (instanced, so it stays fast), and LED boards and a roof
+  fascia carrying the event sponsors: The Home Depot, CrowdStrike, Dell and eBay, alongside OneBridge,
+  Southwestern and HSI Battle of the Brains. The sponsor marks are simplified versions drawn in code in each
+  brand's colours (`src/penalty/sponsors.ts`); swap in official artwork if the sponsors provide it.
 - **Modes:** Penalty Challenge (5 shots), Goalkeeper Challenge (5 saves), Full Shootout (alternating, five
   each, early finish when one side cannot catch up, then sudden death) and Practice.
 - **Shooting:** aim with the mouse or arrows, hold Space or the mouse button to charge, release to strike,

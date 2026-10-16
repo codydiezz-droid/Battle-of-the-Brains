@@ -76,9 +76,11 @@
             <button type="button" id="select-back" class="link-btn">← Menu</button>
             <h2 id="select-title">Pick your players</h2>
             <p class="select-sub">Students wear their home country’s shirt. Coaches wear the Southwestern Pirates shirt.</p>
-            <div class="tabs" role="tablist" aria-label="Role">
-              <button type="button" role="tab" id="tab-shoot" data-tab="shoot" aria-selected="true">Penalty taker</button>
-              <button type="button" role="tab" id="tab-keep" data-tab="keep" aria-selected="false">Goalkeeper</button>
+            <div class="tabs" role="tablist" aria-label="Who plays">
+              <button type="button" role="tab" data-tab="shoot" aria-selected="true">Your taker</button>
+              <button type="button" role="tab" data-tab="keep" aria-selected="false">Your keeper</button>
+              <button type="button" role="tab" data-tab="cpuShoot" aria-selected="false">Their taker</button>
+              <button type="button" role="tab" data-tab="cpuKeep" aria-selected="false">Their keeper</button>
             </div>
           </div>
           <div id="cards" class="cards" role="tabpanel"></div>

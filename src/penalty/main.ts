@@ -84,19 +84,33 @@ $("#menu-tutorial").addEventListener("click", () => {
 
 /* ───────────────────────────── Select ───────────────────────────── */
 
-let tab: Role = "shoot";
-const needs = () => ({
-  shoot: mode !== "keeper",
-  keep: mode !== "challenge",
-});
+type Slot = "shoot" | "keep" | "cpuShoot" | "cpuKeep";
+const slotKey: Record<Slot, "shooterId" | "keeperId" | "cpuShooterId" | "cpuKeeperId"> = {
+  shoot: "shooterId",
+  keep: "keeperId",
+  cpuShoot: "cpuShooterId",
+  cpuKeep: "cpuKeeperId",
+};
+const slotLabel: Record<Slot, string> = {
+  shoot: "Your taker",
+  keep: "Your keeper",
+  cpuShoot: "Their taker",
+  cpuKeep: "Their keeper",
+};
+let tab: Slot = "shoot";
+
+/** Which of the four players a mode uses. */
+function slots(): Slot[] {
+  if (mode === "challenge") return ["shoot", "cpuKeep"];
+  if (mode === "keeper") return ["keep", "cpuShoot"];
+  return ["shoot", "keep", "cpuShoot", "cpuKeep"];
+}
 
 function openSelect() {
-  const n = needs();
-  $("#tab-shoot").hidden = !n.shoot;
-  $("#tab-keep").hidden = !n.keep;
-  tab = n.shoot ? "shoot" : "keep";
-  $("#select-title").textContent =
-    mode === "challenge" ? "Pick your penalty taker" : mode === "keeper" ? "Pick your goalkeeper" : "Pick your players";
+  const used = slots();
+  document.querySelectorAll<HTMLButtonElement>("[data-tab]").forEach((b) => (b.hidden = !used.includes(b.dataset.tab as Slot)));
+  tab = used[0];
+  $("#select-title").textContent = "Pick the players";
   renderCards();
   show("select");
   $("#cards").querySelector<HTMLButtonElement>("[aria-pressed=true]")?.focus();
@@ -112,14 +126,37 @@ function renderCards() {
   document.querySelectorAll<HTMLButtonElement>("[data-tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === tab)));
   const grid = $("#cards");
   grid.innerHTML = "";
-  const current = tab === "shoot" ? save.shooterId : save.keeperId;
+  const current = save[slotKey[tab]];
+  const shooting = tab === "shoot" || tab === "cpuShoot";
+  const choose = (id: string, b: HTMLButtonElement) => {
+    save[slotKey[tab]] = id;
+    persist();
+    grid.querySelectorAll(".card").forEach((c) => c.setAttribute("aria-pressed", String(c === b)));
+    syncPicked();
+    // Move on to the next player to pick
+    const used = slots();
+    const next = used[used.indexOf(tab) + 1];
+    if (next) {
+      tab = next;
+      window.setTimeout(renderCards, 180);
+    }
+  };
+  if (tab === "cpuShoot" || tab === "cpuKeep") {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "card card-random";
+    b.setAttribute("aria-pressed", String(current === "random"));
+    b.innerHTML = `<span class="card-dice" aria-hidden="true">?</span><span class="card-name">Random</span><span class="card-kit">Surprise me</span>`;
+    b.addEventListener("click", () => choose("random", b));
+    grid.appendChild(b);
+  }
   for (const p of roster) {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "card";
     b.setAttribute("aria-pressed", String(p.id === current));
     const s = p.stats;
-    const stats = tab === "shoot" ? statBar("Power", s.power) + statBar("Accuracy", s.accuracy) : statBar("Reflexes", s.reflex) + statBar("Reach", s.reach);
+    const stats = shooting ? statBar("Power", s.power) + statBar("Accuracy", s.accuracy) : statBar("Reflexes", s.reflex) + statBar("Reach", s.reach);
     b.innerHTML = `<span class="card-art"></span>
       <span class="card-name">${p.name}</span>
       <span class="card-kit"><span aria-hidden="true">${p.flag}</span> ${p.kit.label} · ${p.number}</span>
@@ -128,34 +165,24 @@ function renderCards() {
     const art = cardPortrait(p, 132);
     art.setAttribute("aria-hidden", "true");
     b.querySelector(".card-art")!.appendChild(art);
-    b.addEventListener("click", () => {
-      if (tab === "shoot") save.shooterId = p.id;
-      else save.keeperId = p.id;
-      persist();
-      grid.querySelectorAll(".card").forEach((c) => c.setAttribute("aria-pressed", String(c === b)));
-      syncPicked();
-      // In a shootout, move on to picking the keeper after the taker
-      if (tab === "shoot" && needs().keep) {
-        tab = "keep";
-        renderCards();
-      }
-    });
+    b.addEventListener("click", () => choose(p.id, b));
     grid.appendChild(b);
   }
   syncPicked();
 }
 
 function syncPicked() {
-  const n = needs();
-  const parts = [];
-  if (n.shoot) parts.push(`Taker: <strong>${byId(save.shooterId).name}</strong>`);
-  if (n.keep) parts.push(`Keeper: <strong>${byId(save.keeperId).name}</strong>`);
-  $("#picked").innerHTML = parts.join(" · ");
+  $("#picked").innerHTML = slots()
+    .map((s) => {
+      const id = save[slotKey[s]];
+      return `${slotLabel[s]}: <strong>${id === "random" ? "Random" : byId(id).firstName}</strong>`;
+    })
+    .join(" · ");
 }
 
 document.querySelectorAll<HTMLButtonElement>("[data-tab]").forEach((b) =>
   b.addEventListener("click", () => {
-    tab = b.dataset.tab as Role;
+    tab = b.dataset.tab as Slot;
     renderCards();
   }),
 );
@@ -190,8 +217,8 @@ function pickCpu(exclude: string[]) {
 function startMatch() {
   const myShooter = byId(save.shooterId);
   const myKeeper = byId(save.keeperId);
-  const cpuShooter = pickCpu([myShooter.id, myKeeper.id]);
-  const cpuKeeper = pickCpu([myShooter.id, myKeeper.id, cpuShooter.id]);
+  const cpuShooter = save.cpuShooterId === "random" ? pickCpu([myShooter.id, myKeeper.id]) : byId(save.cpuShooterId);
+  const cpuKeeper = save.cpuKeeperId === "random" ? pickCpu([myShooter.id, myKeeper.id, cpuShooter.id]) : byId(save.cpuKeeperId);
   match = { mode, you: [], cpu: [], kicks: [], practiceRole: "shoot", myShooter, myKeeper, cpuShooter, cpuKeeper, over: false };
   if (mode === "keeper") match.practiceRole = "keep";
   engine.setDifficulty(save.difficulty);

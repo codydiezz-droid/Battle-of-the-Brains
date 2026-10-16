@@ -1,3 +1,5 @@
+import { buildStand } from "./stand";
+import { sponsorStrip } from "./sponsors";
 import {
   AmbientLight,
   BoxGeometry,
@@ -220,10 +222,6 @@ export function buildStadium(): Stadium {
   crowdTex.wrapS = RepeatWrapping;
   const stands: Mesh[] = [];
   const standDefs = [
-    // behind the goal (seen by the shooter)
-    { w: 90, x: 0, z: -14, yaw: 0 },
-    // behind the penalty taker (seen from the goal)
-    { w: 90, x: 0, z: 58, yaw: Math.PI },
     { w: 70, x: -44, z: 22, yaw: Math.PI / 2 },
     { w: 70, x: 44, z: 22, yaw: -Math.PI / 2 },
   ];
@@ -245,22 +243,13 @@ export function buildStadium(): Stadium {
     scene.add(roof);
   }
 
-  /* LED boards behind the goal and along the touchlines */
-  const boardTex = canvasTexture(1024, 64, (g) => {
-    g.fillStyle = "#091d3f";
-    g.fillRect(0, 0, 1024, 64);
-    g.font = "800 34px 'Schibsted Grotesk Variable', Arial, sans-serif";
-    g.textBaseline = "middle";
-    const words = ["ONEBRIDGE", "SOUTHWESTERN UNIVERSITY", "GO PIRATES", "HSI BATTLE OF THE BRAINS 2026"];
-    let x = 20;
-    let i = 0;
-    while (x < 1024) {
-      g.fillStyle = i % 2 ? "#ffb81c" : "#8fb8ff";
-      g.fillText(words[i % words.length], x, 34);
-      x += g.measureText(words[i % words.length]).width + 50;
-      i++;
-    }
-  });
+  /* Tiered end stands with real (blocky) fans, behind each goal line */
+  const endStands = [buildStand(scene, -6.4, 0), buildStand(scene, 43, Math.PI)];
+
+  /* LED boards behind the goal and along the touchlines, carrying the sponsors */
+  const boardTex = new CanvasTexture(sponsorStrip(384, 72));
+  boardTex.colorSpace = SRGBColorSpace;
+  boardTex.anisotropy = 4;
   boardTex.wrapS = RepeatWrapping;
   const boardMat = new MeshBasicMaterial({ map: boardTex, color: "#b9c6dd" });
   const boards: Texture[] = [boardTex];
@@ -274,10 +263,11 @@ export function buildStadium(): Stadium {
     m.rotation.y = yaw;
     scene.add(m);
   };
-  addBoard(44, 0, -4.5, 0, 2.2);
-  addBoard(44, 0, 40, Math.PI, 2.2);
-  addBoard(46, -22, 18, Math.PI / 2, 2.3);
-  addBoard(46, 22, 18, -Math.PI / 2, 2.3);
+  // One sponsor every ~5.5 m
+  addBoard(44, 0, -4.5, 0, 1);
+  addBoard(44, 0, 40, Math.PI, 1);
+  addBoard(46, -22, 18, Math.PI / 2, 1.05);
+  addBoard(46, 22, 18, -Math.PI / 2, 1.05);
 
   /* Floodlights */
   const glowMat = new MeshBasicMaterial({ color: "#fff6dc" });
@@ -309,7 +299,9 @@ export function buildStadium(): Stadium {
       shake = Math.max(shake, amount);
     },
     update(t, dt, cheer) {
-      for (const b of boards) b.offset.x = (t * 0.03) % 1;
+      // The LED boards rotate through the sponsors
+      for (const b of boards) b.offset.x = Math.floor(t / 6) * 0.125;
+      for (const s of endStands) s.update(t, cheer);
       // The crowd bounces when it cheers
       stands.forEach((s, i) => (s.position.y = 7.5 + (cheer > 0 ? Math.abs(Math.sin(t * 9 + i)) * 0.35 * cheer : 0)));
       // Net bulge decays

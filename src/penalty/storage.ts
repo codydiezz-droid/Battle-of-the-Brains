@@ -7,6 +7,9 @@ export interface Save {
   tutorial: { shoot: boolean; keep: boolean };
   shooterId: string;
   keeperId: string;
+  /** Opponents: a player id, or "random". */
+  cpuShooterId: string;
+  cpuKeeperId: string;
   best: {
     challenge: Record<Difficulty, number>;
     keeper: Record<Difficulty, number>;
@@ -23,6 +26,8 @@ const fresh = (): Save => ({
   tutorial: { shoot: false, keep: false },
   shooterId: "cody",
   keeperId: "jade",
+  cpuShooterId: "random",
+  cpuKeeperId: "random",
   best: { challenge: { easy: 0, medium: 0, hard: 0 }, keeper: { easy: 0, medium: 0, hard: 0 } },
   shootout: { wins: 0, losses: 0 },
   totals: { shots: 0, goals: 0, faced: 0, saves: 0, perfect: 0 },

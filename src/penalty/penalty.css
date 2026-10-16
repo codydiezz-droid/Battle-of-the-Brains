@@ -862,3 +862,27 @@ h1 {
     gap: 6px;
   }
 }
+
+/* "Random" opponent card and four role tabs */
+.card-random {
+  justify-content: center;
+  min-height: 220px;
+}
+.card-dice {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  margin-bottom: 10px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #3d8bff, #f68835);
+  font-family: var(--display);
+  font-size: 48px;
+  font-weight: 800;
+  color: #fff;
+}
+.tabs {
+  flex-wrap: wrap;
+  justify-content: center;
+  border-radius: 18px;
+}
