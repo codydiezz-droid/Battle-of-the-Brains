@@ -11,7 +11,7 @@ business solution.
 Built with React, Vite and TypeScript, plain CSS, three.js for the hero animation, and Lucide icons. Fonts
 (Schibsted Grotesk and Public Sans) are bundled with the site, so it makes no requests to font services.
 
-**Live site:** https://codydiezz-droid.github.io/Battle-of-the-Brains/
+**Live site:** https://codydiezz-droid.github.io/southwestern-botb-2026/
 
 ---
 

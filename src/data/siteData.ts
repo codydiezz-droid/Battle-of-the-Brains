@@ -19,7 +19,7 @@ export const settings = {
   showStudentEmails: false,
   showCoachEmails: false,
   /** Link to the source code in the footer line. Set to "" to hide it. */
-  githubUrl: "https://github.com/codydiezz-droid/Battle-of-the-Brains",
+  githubUrl: "https://github.com/codydiezz-droid/southwestern-botb-2026",
 };
 
 /* ────────────────────────────── Event ─────────────────────────────── */
