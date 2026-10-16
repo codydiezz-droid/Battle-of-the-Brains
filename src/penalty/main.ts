@@ -1083,21 +1083,38 @@ async function joinAs(code: string, host: boolean) {
   });
   room.onPeers((peers) => onPeers(peers));
   $("#lobby-code").textContent = code;
-  $("#lobby-transport").textContent =
-    room.transport === "live"
-      ? "Live · connected through claude.ai"
-      : room.transport === "p2p"
-        ? "Live · direct connection between your browsers"
-        : "Same device · open this page in a second window to test";
+  syncTransport();
+  window.clearInterval(transportTimer);
+  transportTimer = window.setInterval(() => {
+    if (!net) return window.clearInterval(transportTimer);
+    if (!$("#lobby").hidden) syncTransport();
+  }, 2000);
   syncLobbySettings();
   renderLobby();
   show("lobby");
+}
+
+let transportTimer = 0;
+/** What the lobby says about the connection: live routes, and reachable servers. */
+function syncTransport() {
+  if (!net) return;
+  const r = net.room;
+  const online = r.transports.some((t) => t !== "local");
+  const { up, total } = r.servers();
+  let text: string;
+  if (!online) text = "Same device only · open this page in a second window to test";
+  else if (net.opp) text = "Connected · live";
+  else if (r.transports.includes("claude")) text = "Live · connected through claude.ai" + (total ? ` · ${up} of ${total} online servers reachable` : "");
+  else if (total && up === 0) text = "Connecting to the online servers…";
+  else text = `Online · ${up} of ${total} servers reachable · waiting for your friend`;
+  $("#lobby-transport").textContent = text;
 }
 
 function onPeers(peers: NetPeer[]) {
   if (!net) return;
   const had = !!net.opp;
   net.opp = peers.find((p) => !p.isMe && p.presence.app === "pc") ?? null;
+  if (had !== !!net.opp) syncTransport();
   // The other player left
   if (had && !net.opp && net.matchId && !net.over) {
     showBanner(`${oppName()} left`, false);
@@ -1142,7 +1159,9 @@ function renderLobby() {
         : "Pick your players, then both press Ready."
       : "Waiting for the host to start."
     : `Share the code ${net.room.code} with your friend. They open this page, choose Play online and join.${
-        net.room.transport === "p2p" ? " If they can’t connect, try another network: some school and office Wi-Fi blocks direct connections." : ""
+        net.room.transports.length > 1
+          ? " Use the same game link, and if you can’t see each other after 30 seconds, try another network (a phone hotspot works): some school and office Wi-Fi blocks direct connections."
+          : ""
       }`;
   $("#lobby-settings").hidden = !net.host;
   const s = settings();
