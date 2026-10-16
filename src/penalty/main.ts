@@ -369,6 +369,7 @@ function nextKick() {
   $("#shuffle").hidden = role !== "keep";
   $("#practice-switch").textContent = match.practiceRole === "shoot" ? "Switch to keeper" : "Switch to striker";
   startTutorial(role);
+  commentate(role, shooter, keeper);
 }
 
 const faceCache = new Map<string, string>();
@@ -394,6 +395,7 @@ engine.onResult = (r) => {
   }
   persist();
   kickAchievements(r);
+  resultBuzz(r);
   showBanner(r.label, r.good);
   updateBoard();
   $("#live").textContent = `${r.label} ${boardText()}`;
@@ -419,8 +421,7 @@ function showBanner(text: string, good: boolean) {
 const goals = (a: boolean[]) => a.filter(Boolean).length;
 
 /** "you" / "cpu" when a shootout is over, "done" for the single-role modes. */
-function matchDecided(): "you" | "cpu" | "done" | null {
-  const m = match;
+function matchDecided(m: Pick<MatchState, "mode" | "you" | "cpu"> = match): "you" | "cpu" | "done" | null {
   if (m.mode === "practice") return null;
   if (m.mode === "challenge") return m.you.length >= 5 ? "done" : null;
   if (m.mode === "keeper") return m.cpu.length >= 5 ? "done" : null;
@@ -438,6 +439,85 @@ function matchDecided(): "you" | "cpu" | "done" | null {
   if (ny === nc && y !== c) return y > c ? "you" : "cpu";
   return null;
 }
+
+/* ───────────────────────────── Commentary ───────────────────────────── */
+
+const pick = <T,>(list: T[]) => list[Math.floor(Math.random() * list.length)];
+let commentTimer = 0;
+function say(line: string) {
+  const c = $("#commentary");
+  c.textContent = line;
+  c.hidden = false;
+  // Restart the entrance animation
+  c.style.animation = "none";
+  void c.offsetWidth;
+  c.style.animation = "";
+  window.clearTimeout(commentTimer);
+  commentTimer = window.setTimeout(() => (c.hidden = true), 3600);
+}
+
+/** A line for a five-kick duel, from the striker's goals and the keeper's stops so far. */
+function duelLine(striker: string, keeper: string, scored: number, taken: number) {
+  const stops = taken - scored;
+  if (taken === 0) return pick([`${striker} places the ball. Five kicks to decide it.`, `${keeper} bounces on the line. Here we go.`]);
+  if (scored >= STRIKER_NEEDS) return pick([`${striker} has already won it. Now for style.`, `It’s won. Can ${striker} add one more?`]);
+  if (stops >= 5 - STRIKER_NEEDS + 1) return pick([`${keeper} has won it. Pride on the line now.`, `${keeper} has done the job. Clean sheet next?`]);
+  const needGoals = STRIKER_NEEDS - scored;
+  const left = 5 - taken;
+  if (needGoals === left) return pick([`${striker} can’t miss another. Every kick has to go in.`, `No room for error now for ${striker}.`]);
+  if (needGoals === 1) return pick([`Score this and ${striker} wins it!`, `One more goal and it’s over for ${keeper}.`]);
+  if (stops === 1) return pick([`One more stop and ${keeper} wins it.`, `${keeper} needs just one more save.`]);
+  return pick([`${striker} steps up…`, `${keeper} studies the run-up.`, `The crowd goes quiet for ${striker}.`, `${striker} takes a deep breath.`]);
+}
+
+/** Before each offline kick: a line that reads the situation. */
+function commentate(role: Role, shooter: Player, keeper: Player) {
+  const m = match;
+  const s = shooter.firstName;
+  const k = keeper.firstName;
+  if (m.mode === "practice") return;
+  if (m.mode === "challenge") return say(duelLine(s, k, goals(m.you), m.you.length));
+  if (m.mode === "keeper") return say(duelLine(s, k, goals(m.cpu), m.cpu.length));
+  // Shootout: what would this kick decide?
+  const mine = role === "shoot" ? m.you : m.cpu;
+  const ifGoal = matchDecided({ mode: m.mode, you: role === "shoot" ? [...mine, true] : m.you, cpu: role === "shoot" ? m.cpu : [...mine, true] });
+  const ifMiss = matchDecided({ mode: m.mode, you: role === "shoot" ? [...mine, false] : m.you, cpu: role === "shoot" ? m.cpu : [...mine, false] });
+  const sudden = m.you.length >= 5 && m.cpu.length >= 5;
+  if (role === "shoot") {
+    if (ifGoal === "you") return say(pick([`Score this and ${s} wins the shootout!`, `${s} has the chance to win it!`]));
+    if (ifMiss === "cpu") return say(pick([`${s} must score to stay alive.`, `Miss this and it’s over. No pressure, ${s}.`]));
+  } else {
+    if (ifMiss === "you") return say(pick([`Save this and ${k} wins it!`, `One stop from glory for ${k}.`]));
+    if (ifGoal === "cpu") return say(pick([`${s} can win it for them. ${k} needs a save!`, `Stop this or it’s over, ${k}.`]));
+  }
+  if (sudden) return say(pick(["Sudden death. Nerves of steel.", `Sudden death. ${s} against ${k}.`]));
+  if (m.you.length === 0 && role === "shoot") return say(`${s} takes the first kick of the shootout.`);
+  return say(pick([`${s} steps up…`, `${k} spreads the arms wide.`, `${s} picks a spot.`, `The crowd holds its breath.`]));
+}
+
+/** Before each online kick. */
+function commentateOnline(striker: Player, keeper: Player) {
+  if (!net) return;
+  if (settings().format === "duel") {
+    const shots = shotsOf(strikerSide(0));
+    return say(duelLine(striker.firstName, keeper.firstName, goals(shots), shots.length));
+  }
+  if (net.k >= 10) return say(pick(["Sudden death. Nerves of steel.", `Sudden death. ${striker.firstName} against ${keeper.firstName}.`]));
+  say(pick([`${striker.firstName} steps up…`, `${keeper.firstName} spreads the arms wide.`, `The crowd holds its breath.`]));
+}
+
+/* ───────────────────────────── Haptics ───────────────────────────── */
+
+/** A short buzz on phones that support it (most Android browsers; not iPhone Safari). */
+function buzz(pattern: number | number[]) {
+  if (save.muted || !matchMedia("(pointer: coarse)").matches) return;
+  try {
+    navigator.vibrate?.(pattern);
+  } catch {
+    /* not supported */
+  }
+}
+const resultBuzz = (r: KickResult) => buzz(r.good ? (r.outcome === "goal" ? [40, 60, 90] : [25, 40, 25, 40, 60]) : 120);
 
 function boardText() {
   const m = match;
@@ -590,6 +670,8 @@ function playCelebration(winner: Celebrant, loser: Celebrant, id: string, then: 
   show("hud");
   showBanner(c.shout, true);
   $("#banner").classList.add("celebrate-shout");
+  $("#commentary").hidden = true;
+  buzz([60, 80, 60, 80, 160]);
   $("#live").textContent = `${winner.player.firstName} celebrates: ${c.name}.`;
   engine.celebrate(winner.player, winner.keeper, loser.player, loser.keeper, c.id, () => {
     $("#banner").hidden = true;
@@ -1177,6 +1259,7 @@ function onlineKick() {
   $("#shuffle").hidden = role !== "keep";
   updateOnlineBoard();
   startTutorial(role);
+  commentateOnline(striker, keeper);
   applyRemote();
 }
 
@@ -1235,6 +1318,7 @@ function onlineResult(r: KickResult) {
   if (r.role === "shoot" && r.outcome === "goal" && r.perfect) save.totals.perfect++;
   persist();
   kickAchievements(r);
+  resultBuzz(r);
   showBanner(r.label, r.good);
   updateOnlineBoard();
   $("#live").textContent = r.label;

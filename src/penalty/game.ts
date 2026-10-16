@@ -1046,17 +1046,25 @@ export class Engine {
       return;
     }
     if (this.phase === "replay") {
-      // Low side angle at the goalmouth
       const k = (this.replayClock - this.replayFrom) * 0.4;
-      pos.set(7.5 - k, 1.4, 4.5 + k * 0.5);
-      look.set(b.x * 0.4, 1.0, Math.max(0, b.z * 0.25));
+      const saved = this.result?.outcome === "save";
+      if (saved) {
+        // Saves: low behind the goal, over the keeper's shoulder, as the ball comes at the gloves
+        pos.set(this.keeper.x * 0.4 + 0.9 - k * 0.6, 1.25 + k * 0.15, -3.3);
+        look.set(b.x * 0.5, 1.0, Math.min(6, Math.max(1.5, b.z)));
+      } else {
+        // Goals: low side angle at the goalmouth
+        pos.set(7.5 - k, 1.4, 4.5 + k * 0.5);
+        look.set(b.x * 0.4, 1.0, Math.max(0, b.z * 0.25));
+      }
       this.camera.position.copy(pos);
       this.camera.lookAt(look);
-      if (this.camera.fov !== this.baseFov) {
-        this.camera.fov = this.baseFov;
+      const fov = this.baseFov + (saved ? 8 : 0);
+      if (this.camera.fov !== fov) {
+        this.camera.fov = fov;
         this.camera.updateProjectionMatrix();
       }
-      this.stadium.setNetOpacity(0.55);
+      this.stadium.setNetOpacity(saved ? 0.12 : 0.55);
       return;
     }
     if (this.role === "shoot") {
