@@ -1,41 +1,70 @@
-import { useState } from "react";
-import { ProfileDialog } from "../components/ProfileDialog";
-import { Reveal } from "../components/Reveal";
-import { SectionLabel } from "../components/SectionLabel";
-import { TeamMember } from "../components/TeamMember";
+import { LinkedInIcon } from "../components/Icons";
 import { team } from "../data/siteData";
+import { asset, hasImage } from "../lib/images";
+import { portraitAlt, visibleEmail } from "../lib/people";
+import { spellNumber } from "../lib/text";
 
+const countries = new Set(team.map((m) => m.country)).size;
+
+/** The seven students. Same card for everyone; the order is not a ranking. */
 export function Team() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-
   return (
-    <section id="team" data-nav="team" aria-labelledby="team-heading" className="py-24 sm:py-32 lg:py-40">
-      <div className="container-site">
-        <Reveal className="grid gap-6 lg:grid-cols-12 lg:items-end">
-          <div className="lg:col-span-7">
-            <SectionLabel index="05" label="Team" />
-            <h2 id="team-heading" className="display mt-8 text-[clamp(3.2rem,8vw,7rem)]">
-              The Seven
-            </h2>
-          </div>
-          <p className="font-serif text-[1.6rem] leading-snug italic text-ink/80 lg:col-span-5 lg:justify-self-end">
-            Different perspectives. One team.
+    <section id="team" className="section team-section" aria-labelledby="team-title">
+      <div className="wrap">
+        <div className="section-head" data-reveal>
+          <p className="eyebrow">The team</p>
+          <h2 id="team-title" className="h2">
+            Meet the {spellNumber(team.length)}.
+          </h2>
+          <p className="sub">
+            {spellNumber(countries, true)} home countries, one university. Listed in no particular order.
           </p>
-        </Reveal>
-
-        {/* Identical cards: one per row on phones, two on tablets, and on large screens four on the first row with three centred beneath. */}
-        <ul className="mt-14 flex flex-wrap justify-center gap-x-4 gap-y-12 sm:gap-x-6 lg:mt-20 lg:gap-x-8 lg:gap-y-16">
-          {team.map((member, i) => (
-            <li key={member.name} className="w-full sm:w-[calc((100%-1.5rem)/2)] lg:w-[calc((100%-6rem)/4)]">
-              <Reveal delay={(i % 4) * 0.06}>
-                <TeamMember member={member} index={i} onOpen={() => setOpenIndex(i)} />
-              </Reveal>
-            </li>
-          ))}
+        </div>
+        <ul className="members">
+          {team.map((m, i) => {
+            const email = visibleEmail(m, "student");
+            return (
+              <li key={m.name} className="member" data-reveal style={{ "--i": i % 4 } as React.CSSProperties}>
+                <div className="member-photo">
+                  {hasImage(m.image) ? (
+                    <img
+                      src={asset(m.image)}
+                      alt={portraitAlt(m)}
+                      width="560"
+                      height="560"
+                      loading="lazy"
+                      decoding="async"
+                      style={{ objectPosition: m.objectPosition || "50% 25%" }}
+                    />
+                  ) : (
+                    <span className="member-initials" aria-hidden="true">
+                      {m.initials}
+                    </span>
+                  )}
+                </div>
+                <h3>{m.name}</h3>
+                {m.location && (
+                  <p className="member-place">
+                    {m.location}
+                    {m.flag && <span aria-hidden="true"> {m.flag}</span>}
+                  </p>
+                )}
+                {m.bio && <p className="member-bio">{m.bio}</p>}
+                <div className="member-links">
+                  {m.linkedin && (
+                    <a href={m.linkedin} target="_blank" rel="noopener noreferrer">
+                      <LinkedInIcon size={14} />
+                      LinkedIn
+                      <span className="sr-only"> profile of {m.name} (opens in a new tab)</span>
+                    </a>
+                  )}
+                  {email && <a href={`mailto:${email}`}>{email}</a>}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </div>
-
-      <ProfileDialog members={team} index={openIndex} onClose={() => setOpenIndex(null)} onNavigate={setOpenIndex} />
     </section>
   );
 }

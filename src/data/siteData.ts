@@ -1,34 +1,25 @@
 /**
- * ─────────────────────────────────────────────────────────────────────────────
- *  SITE DATA — the one file to edit.
+ * SITE DATA: the one file to edit.
  *
- *  Every name, email, photo path, bio, journey step, gallery photo and project
- *  detail on the website comes from here. Components never hardcode people.
+ * Every name, photo, bio, step and caption on the website comes from here.
+ * Components never hardcode people.
  *
- *  Rules of thumb
- *   • Optional fields can be left as "" (or deleted) — the layout adapts.
- *   • Only add information the person has shared or approved. Never guess.
- *   • Photo paths start with "/images/…" and point inside the /public folder.
- *     If a file doesn't exist yet, a placeholder with initials is shown.
- * ─────────────────────────────────────────────────────────────────────────────
+ *  • Optional fields can be left as "" and the layout adapts.
+ *  • Only add information the person has shared or approved. Never guess.
+ *  • Photo paths start with "/images/..." and point inside the /public folder.
+ *  • Event photos came from the team's shared Google Drive. Captions follow the
+ *    names the photographers gave them; nobody is identified from a group photo.
  */
-import type { Coach, FeatureImage, GalleryImage, JourneyStep, Metric, Presentation, Project, TeamMember } from "./types";
+import type { Coach, Photo, Presentation, Step, StoryBeat, TeamMember, WeekStep } from "./types";
 
 /* ───────────────────────────── Settings ───────────────────────────── */
 
 export const settings = {
-  /**
-   * Email privacy. When false, no email address is rendered anywhere on the page.
-   * (They still live in this file, so anyone reading the repository can see them.)
-   */
+  /** Email privacy. When false, no email address is rendered anywhere on the page. */
   showStudentEmails: false,
   showCoachEmails: false,
-
-  /** Link for the GitHub icon in the footer. Set to "" to hide it. */
+  /** Link to the source code in the footer line. Set to "" to hide it. */
   githubUrl: "https://github.com/codydiezz-droid/Battle-of-the-Brains",
-
-  /** Optional general contact address for the footer. Leave "" to hide. */
-  contactEmail: "",
 };
 
 /* ────────────────────────────── Event ─────────────────────────────── */
@@ -36,59 +27,11 @@ export const settings = {
 export const event = {
   name: "HSI Battle of the Brains",
   year: 2026,
-  dates: "September 28 – October 2, 2026",
-  datesShort: "September 28 – October 2",
+  dates: "September 28 to October 2, 2026",
   school: "Southwestern University",
-  location: "Georgetown, Texas",
-  participation: "Second-Year Participant",
-  /** Used for the "Years at BOTB" statistic. */
+  /** Southwestern's year at the competition, e.g. 2 for "second year". */
   yearsParticipating: 2,
-};
-
-/* ───────────────────────── Featured images ────────────────────────── */
-
-export const teamPhoto: FeatureImage & { caption: string; date: string } = {
-  src: "/images/team/botb-team-2026.jpg",
-  alt: "The Southwestern University team smiling together in front of the Home Depot Technology backdrop at the 2026 HSI Battle of the Brains, with a Southwestern University sign held up in front.",
-  caption: "Representing Southwestern University at the 2026 HSI Battle of the Brains.",
-  date: "September 2026",
-  // Leave aspectRatio out to show the whole photo uncropped.
-  // To crop on phones, try: aspectRatio: { mobile: "4 / 3" }, then adjust objectPosition.
-  objectPosition: { mobile: "50% 45%", desktop: "50% 40%" },
-};
-
-export const competitionGraphic: FeatureImage = {
-  src: "/images/botb-2026-southwestern.jpg",
-  alt: "2026 HSI Battle of the Brains graphic: Southwestern University, 2nd-Year Participant, September 28 – October 2, 2026.",
-};
-
-/** The official "Meet your 2026 Finalists" graphic. Shown in the result section once the file is added. */
-export const finalistsGraphic: FeatureImage = {
-  src: "/images/2026-finalists.jpg",
-  alt: "2026 HSI Battle of the Brains finalist schools including Southwestern University",
-  caption: "Southwestern University named a 2026 HSI Battle of the Brains finalist.",
-};
-
-/** Group photo of the seven students with their coaches. The section is hidden until the file is added. */
-export const teamAndCoachesPhoto: FeatureImage = {
-  src: "/images/team/team-and-coaches-2026.jpg",
-  alt: "Southwestern University Battle of the Brains team with coaches at the 2026 competition",
-  caption: "Southwestern University at the 2026 HSI Battle of the Brains.",
-  objectPosition: { mobile: "50% 40%", desktop: "50% 40%" },
-};
-
-/* ─────────────────────────── Written copy ─────────────────────────── */
-
-export const story = {
-  paragraphs: [
-    "2026 marks Southwestern University's second year at the HSI Battle of the Brains.",
-    "Seven students came together with different experiences, interests, and perspectives, united by the opportunity to represent Southwestern and solve a challenging real-world problem.",
-    "For some of us, this was our first Battle of the Brains. What began as a competition quickly became an experience built around late nights, difficult questions, new ideas, teamwork, and learning from one another.",
-  ],
-};
-
-export const competition = {
-  note: "We are grateful for the opportunity to continue Southwestern's presence at the competition and contribute our own chapter to that story.",
+  prompt: "The New Front Door: Trustworthy AI Product Discovery",
 };
 
 /**
@@ -97,18 +40,37 @@ export const competition = {
  * win the overall competition, so never word it that way.
  */
 export const result = {
-  headline: "1st Place — Business Solution",
+  award: "1st place, Business Solution",
   summary:
-    "Our team earned first place for our business solution and was selected as a finalist to present OneBridge on the final stage.",
-  credentials: ["2026 HSI Battle of the Brains", "Southwestern University", "Finalist", "1st Place — Business Solution"],
+    "The judges awarded OneBridge first place for business solution, and Southwestern was selected as a finalist to present it in the final round.",
 };
 
+/* ───────────────────────── Featured photos ────────────────────────── */
+
+/** The seven students with their coaches. Shown full width under the hero. */
+export const groupPhoto: Photo = {
+  src: "/images/team/team-and-coaches-2026",
+  width: 1600,
+  height: 1200,
+  alt: "The Southwestern University team and coaches standing together in business attire on a stone terrace, with trees and a red-roofed tower behind them.",
+  caption: "The Southwestern team and coaches at the 2026 HSI Battle of the Brains.",
+};
+
+export const finalistsGraphic = {
+  src: "/images/2026-finalists.webp",
+  width: 820,
+  height: 1180,
+  alt: "The official “Meet your 2026 finalists” graphic from HSI Battle of the Brains, which includes Southwestern University.",
+};
+
+/* ─────────────────────────── Written copy ─────────────────────────── */
+
 export const coachesIntro =
-  "This experience would not have been possible without the mentors who challenged us, encouraged us, and believed in our team throughout the competition.";
+  "Three Southwestern mentors prepared us, pushed our thinking, and stayed with us through the competition.";
 
 export const gratitude = {
   paragraph:
-    "Thank you to our coaches, the HSI Battle of the Brains team, the judges, sponsors, volunteers, and everyone who created an environment where students could build, compete, learn, and connect.",
+    "Thank you to our coaches, the HSI Battle of the Brains team, the judges, sponsors, volunteers, and everyone who made a week like this possible for students.",
   /** People and organizations named in the acknowledgments, in order. */
   recognize: [
     "Dr. Debika Sihi",
@@ -121,11 +83,7 @@ export const gratitude = {
 };
 
 /* ──────────────────────────── The Seven ───────────────────────────── */
-/*
- * Every member gets the same space on the page; the order is not a ranking.
- * Portraits were provided and confirmed by the team. Save a file at the path
- * in `image` and it appears automatically; until then initials are shown.
- */
+/* Every member gets the same space on the page; the order is not a ranking. */
 
 export const team: TeamMember[] = [
   {
@@ -133,13 +91,13 @@ export const team: TeamMember[] = [
     firstName: "Asin",
     initials: "AF",
     email: "allavudea@southwestern.edu",
-    image: "/images/team/asin-allavudeen.png",
-    // Fine-tune the crop if a face sits off-centre, e.g. "50% 30%".
+    image: "/images/team/asin-allavudeen.webp",
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
     location: "India",
     flag: "🇮🇳",
+    country: "India",
     bio: "Asin came into the week ready to take on a real-world problem with six classmates. Good questions came first, and every conversation along the way was a chance to learn something new.",
     linkedin: "https://www.linkedin.com/in/asin-fathima-allavudeen-a49631303/",
   },
@@ -148,13 +106,13 @@ export const team: TeamMember[] = [
     firstName: "Emma",
     initials: "ES",
     email: "sancheze@southwestern.edu",
-    image: "/images/team/emma-sanchez.png",
-    // Fine-tune the crop if a face sits off-centre, e.g. "50% 30%".
+    image: "/images/team/emma-sanchez.webp",
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
     location: "United States",
     flag: "🇺🇸",
+    country: "United States",
     bio: "Emma joined the team to represent Southwestern and to see how much a small group can build in a single week. The whiteboard sessions, revisions, and late nights are all part of the story Emma shares with this team.",
     linkedin: "https://www.linkedin.com/in/emma-sanchez-618a54404/",
   },
@@ -163,13 +121,13 @@ export const team: TeamMember[] = [
     firstName: "Alyanna",
     initials: "AM",
     email: "martineza@southwestern.edu",
-    image: "/images/team/alyanna-martinez.png",
-    // Fine-tune the crop if a face sits off-centre, e.g. "50% 30%".
+    image: "/images/team/alyanna-martinez.webp",
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
     location: "Mexico",
     flag: "🇲🇽",
+    country: "Mexico",
     bio: "For Alyanna, the Battle of the Brains was about community: representing Southwestern and the people who made the trip possible. Somewhere between the first brainstorm and the final pitch, seven classmates became a team.",
     linkedin: "https://www.linkedin.com/in/alyanna-martinez088/",
   },
@@ -178,14 +136,14 @@ export const team: TeamMember[] = [
     firstName: "Elias",
     initials: "ES",
     email: "sarwanae@southwestern.edu",
-    image: "/images/team/elias-sarwana.png",
-    // Fine-tune the crop if a face sits off-centre, e.g. "50% 30%".
+    image: "/images/team/elias-sarwana.webp",
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
     hometown: "Karachi, Pakistan",
     location: "Pakistan",
     flag: "🇵🇰",
+    country: "Pakistan",
     bio: "Originally from Karachi, Pakistan, Elias joined the team to represent Southwestern and take on a real-world business challenge in 24 hours. He worked alongside six classmates to research, build, and present OneBridge in the final round.",
     linkedin: "https://www.linkedin.com/in/esarwana/",
   },
@@ -194,13 +152,13 @@ export const team: TeamMember[] = [
     firstName: "Juan",
     initials: "JC",
     email: "martinez2@southwestern.edu",
-    image: "/images/team/juan-carlos.png",
-    // Fine-tune the crop if a face sits off-centre, e.g. "50% 30%".
+    image: "/images/team/juan-carlos.webp",
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
     location: "Mexico City, Mexico",
     flag: "🇲🇽",
+    country: "Mexico",
     bio: "Juan Carlos took on the challenge alongside the rest of the seven, trading ideas, testing them, and starting over when something didn't work. The best moments came from figuring things out together.",
     linkedin: "https://www.linkedin.com/in/jcarlos-martinez/",
   },
@@ -209,13 +167,13 @@ export const team: TeamMember[] = [
     firstName: "Cody",
     initials: "CD",
     email: "diezjennc@southwestern.edu",
-    image: "/images/team/cody-diez-jennings.png",
-    // Fine-tune the crop if a face sits off-centre, e.g. "50% 30%".
+    image: "/images/team/cody-diez-jennings.webp",
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
     location: "Madrid, Spain",
     flag: "🇪🇸",
+    country: "Spain",
     bio: "Cody is grateful to have spent this week with these six teammates and three coaches. Representing Southwestern on this stage was a chance to keep learning and to push a little further than expected.",
     linkedin: "https://www.linkedin.com/in/codydiez/",
   },
@@ -224,13 +182,13 @@ export const team: TeamMember[] = [
     firstName: "Jade",
     initials: "JF",
     email: "fokaj@southwestern.edu",
-    image: "/images/team/jade-foka.jpg",
-    // Fine-tune the crop if a face sits off-centre, e.g. "50% 30%".
+    image: "/images/team/jade-foka.webp",
     objectPosition: "50% 25%",
     major: "",
     classYear: "",
     location: "Cameroon",
     flag: "🇨🇲",
+    country: "Cameroon",
     bio: "Jade saw the competition as a chance to learn quickly, think on the spot, and grow with a group that started as classmates and finished as a team. Each round brought something new to work through together.",
     linkedin: "https://www.linkedin.com/in/foka/",
   },
@@ -245,7 +203,7 @@ export const coaches: Coach[] = [
     firstName: "Debika",
     initials: "DS",
     email: "sihid@southwestern.edu",
-    image: "/images/coaches/debika-sihi.jpg",
+    image: "/images/coaches/debika-sihi.webp",
     role: "Coach",
     title: "",
     profileUrl: "https://www.southwestern.edu/live/profiles/25848-debika-sihi",
@@ -258,7 +216,7 @@ export const coaches: Coach[] = [
     firstName: "Abby",
     initials: "AD",
     email: "dingsa@southwestern.edu",
-    image: "/images/coaches/abby-dings.jpg",
+    image: "/images/coaches/abby-dings.webp",
     role: "Coach",
     title: "",
     profileUrl: "https://www.southwestern.edu/live/profiles/25780-abby-dings",
@@ -271,7 +229,7 @@ export const coaches: Coach[] = [
     initials: "AR",
     email: "ramirezad@southwestern.edu",
     // Photo provided and confirmed by the team.
-    image: "/images/coaches/adrian-ramirez.jpg",
+    image: "/images/coaches/adrian-ramirez.webp",
     role: "Coach",
     title: "",
     profileUrl: "",
@@ -280,97 +238,223 @@ export const coaches: Coach[] = [
   },
 ];
 
-/* ───────────────────────────── Journey ────────────────────────────── */
+/* ───────────────────────────── The week ───────────────────────────── */
 /*
- * The 24-hour competition in four stages. Keep each line short.
- * Add `image: "/images/journey/<file>.jpg"` to any step to show a photo.
+ * Photos from the shared Drive, in the order of the week. Each photo needs
+ * public<src>-800.webp and public<src>-1600.webp.
  */
 
-export const journey: JourneyStep[] = [
+const p = (name: string, width: number, height: number, alt: string, caption: string): Photo => ({
+  src: `/images/event/${name}`,
+  width,
+  height,
+  alt,
+  caption,
+});
+
+export const photos = {
+  welcome: p(
+    "cindy-welcome",
+    1200,
+    1600,
+    "Jade Cindy Foka in a yellow Battle of the Brains shirt, holding the flag of Cameroon in front of the event backdrop.",
+    "Jade Cindy Foka with the flag of Cameroon at the welcome event.",
+  ),
+  thrivent: p(
+    "thrivent",
+    1600,
+    1197,
+    "Students around a table working on a hands-on activity with craft supplies.",
+    "A hands-on session with Thrivent.",
+  ),
+  barbeque: p(
+    "barbeque",
+    1600,
+    1200,
+    "Students relaxing on a covered patio with plates of barbecue on a low table.",
+    "Barbecue and conversation between sessions.",
+  ),
+  hyperfocused: p(
+    "hyperfocused",
+    900,
+    1600,
+    "Students working at computers in a large lab during the challenge.",
+    "Heads down during the 24-hour challenge.",
+  ),
+  hyperfocused2: p(
+    "hyperfocused-2",
+    900,
+    1600,
+    "A wider view of the computer lab with teams at work.",
+    "The lab, late in the build.",
+  ),
+  trioPrep: p(
+    "trio-prep",
+    1200,
+    1600,
+    "Three teammates in business attire reviewing notes on a laptop before presenting.",
+    "Getting mentally prepared before presenting.",
+  ),
+  beforePrez: p(
+    "before-prez",
+    1440,
+    1080,
+    "A group selfie of the team in business attire inside a van.",
+    "On the way to present.",
+  ),
+  waiting: p(
+    "waiting-finalists",
+    1600,
+    598,
+    "Four teammates seated in an auditorium, smiling at the camera.",
+    "Part of the team waiting to hear the finalists.",
+  ),
+  presenting: p(
+    "finals-presenting",
+    1600,
+    868,
+    "Two team members presenting on stage, with the OneBridge slides projected behind them.",
+    "Jade Cindy Foka and Cody Diez Jennings presenting OneBridge.",
+  ),
+  allDone: p(
+    "all-done",
+    1600,
+    1200,
+    "The team in business attire standing together in a presentation room after presenting.",
+    "All done: the team after presenting.",
+  ),
+  outdoors: p(
+    "team-outdoors",
+    1600,
+    1200,
+    "The team in business attire posing playfully outdoors in front of trees.",
+    "A lighter moment outside.",
+  ),
+  scholarship: p(
+    "cody-scholarship",
+    1600,
+    1131,
+    "A stage with the eBay scholarship winners slide on the screen and students lined up beside a podium.",
+    "Cody Diez Jennings on stage for the eBay scholarship.",
+  ),
+  scholarshipStage: p(
+    "scholarship-stage",
+    1600,
+    1200,
+    "Students in yellow event shirts on stage in front of the Battle of the Brains backdrop, with an audience in the foreground.",
+    "The eBay scholarship semifinalists on stage, including Cody Diez Jennings.",
+  ),
+  silly: p(
+    "silly",
+    1440,
+    1080,
+    "A close-up selfie of a teammate with others smiling in the background of the lab.",
+    "A quick selfie during the build.",
+  ),
+};
+
+export const week: WeekStep[] = [
   {
-    title: "The Challenge",
-    description: "We had 24 hours to build a company and develop an AI-assisted product discovery solution.",
+    title: "Welcome",
+    body: "The week opened with the welcome event, where Team SU did its cheer and met the other teams.",
+    photos: [photos.welcome],
   },
   {
-    title: "Build",
-    description:
-      "Our team combined business strategy, research, data analysis, design, AI, and financial modeling to create OneBridge.",
+    title: "Around the challenge",
+    body: "Sessions with sponsors and shared meals filled the time around the challenge.",
+    photos: [photos.thrivent, photos.barbeque],
   },
   {
-    title: "Finalists",
-    description: "Southwestern University was selected as one of the 2026 HSI Battle of the Brains finalists.",
+    title: "The 24-hour challenge",
+    body: "We had 24 hours to build a company around an AI-assisted product discovery solution. Research, business strategy, data analysis, design, AI, and financial modeling all went into OneBridge.",
+    photos: [photos.hyperfocused, photos.hyperfocused2],
   },
   {
-    title: "The Stage",
-    description: "We advanced to the final round and presented OneBridge to the judges.",
+    title: "Getting ready",
+    body: "We turned the work into a pitch, rehearsed it, and walked in together.",
+    photos: [photos.trioPrep, photos.beforePrez],
   },
+  {
+    title: "Finalists and the final stage",
+    body: "Southwestern was named a 2026 finalist. We presented OneBridge in the final round, and the judges awarded it first place for business solution.",
+    photos: [photos.waiting, photos.presenting],
+  },
+  {
+    title: "After presenting",
+    body: "Seven students who started the week as classmates finished it as a team.",
+    photos: [photos.allDone, photos.outdoors],
+  },
+];
+
+/** Every photo in the gallery at the end of the page, in this order. */
+export const gallery: Photo[] = [
+  photos.allDone,
+  photos.presenting,
+  photos.welcome,
+  photos.hyperfocused,
+  photos.outdoors,
+  photos.trioPrep,
+  photos.scholarship,
+  photos.waiting,
+  photos.thrivent,
+  photos.beforePrez,
+  photos.hyperfocused2,
+  photos.barbeque,
+  photos.scholarshipStage,
+  photos.silly,
 ];
 
 /* ───────────────────────────── OneBridge ──────────────────────────── */
-/*
- * What we built. Only describe what is in the presentation — no invented
- * numbers, customers or technical claims.
- */
+/* What we built. Only describe what is in the presentation and prototype. */
 
-export const project: Project = {
-  label: "Built during the 2026 HSI Battle of the Brains",
+export const onebridge = {
   name: "OneBridge",
-  tagline: "The Trusted Connection",
   website: "https://onebridge-botb-2026.vercel.app/",
-  intro:
-    "During the 24-hour challenge, our team created OneBridge — a concept designed to help small businesses become more accurately represented and discoverable in AI-assisted search.",
+  lead: "When customers ask an AI assistant where to buy something, local shops are easy to miss. OneBridge gives assistants the facts the owner has approved.",
+  story: [
+    {
+      kicker: "Maria",
+      title: "Needs a part today.",
+      body: "She asks an AI assistant where to buy a brake rotor nearby.",
+    },
+    {
+      kicker: "The assistant",
+      title: "Guesses.",
+      body: "It sends her to a chain store across town. It has never seen the shop around the corner.",
+      sr: "The assistant answers: Your best bet is a big chain store across town. Smaller shops may not carry it.",
+    },
+    {
+      kicker: "Jorge",
+      title: "Has it two blocks away.",
+      body: "The rotor is on his shelf for $49.99. His prices, stock, and hours live in a spreadsheet no assistant can read.",
+    },
+    {
+      kicker: "With OneBridge",
+      title: "The answer is right.",
+      body: "Jorge’s approved facts are published where AI assistants can read them, so Maria gets the right answer.",
+      sr: "The connected assistant answers: Jorge’s Auto Parts, two blocks away, has one in stock for $49.99. They’re open until 6 PM.",
+    },
+  ] satisfies StoryBeat[],
   steps: [
-    { title: "Connect", description: "Bring together the business’s existing information." },
-    { title: "Verify", description: "Organize and verify accurate business and product data." },
-    { title: "Discover", description: "Help AI systems access better information when customers search." },
-  ],
+    { title: "Share", body: "The owner uploads one document with products, prices, stock, and hours." },
+    { title: "Verify", body: "An AI workflow organizes it and flags gaps. The owner approves every fact." },
+    { title: "Connect", body: "OneBridge publishes the facts as a live feed AI assistants can read, plus an optional AI-ready website." },
+    { title: "Monitor", body: "We check what assistants say about the business and help fix mistakes." },
+  ] satisfies Step[],
+  /** How the team split the 24 hours. */
+  disciplines: ["Research", "Business strategy", "Data analysis", "Design", "AI", "Financial modeling"],
+  pricing: { setup: "$250", monthly: "$149" },
 };
 
-/**
- * The final pitch deck. Put the files in public/presentation/. The section
- * stays hidden until the .pptx exists; the PDF button appears only if a PDF does.
- */
+/** The final pitch deck, in public/presentation/. */
 export const presentation: Presentation = {
   pptx: "/presentation/SU-OneBridge-Final-Pitch.pptx",
-  pdf: "/presentation/SU-OneBridge-Final-Pitch.pdf",
-  logo: "",
-  preview: "/images/onebridge/dashboard-mockup.png",
-  previewAlt: "OneBridge dashboard mockup from our final presentation, shown on a laptop with sample data.",
-  fileNote: "PowerPoint · 34 MB",
-  summary:
-    "The OneBridge deck we presented to the judges in the final round. This page tells the short version; the presentation has the full story.",
+  fileNote: "PowerPoint, 9 MB",
 };
 
-/* ─────────────────────────── By the numbers ───────────────────────── */
-
-export const metrics: Metric[] = [
-  { value: 24, label: "Hours to build" },
-  { value: team.length, label: "Students" },
-  { value: 1, label: "Business solution" },
-  { value: "Finalist", label: "2026 competition" },
-  { value: 1, suffix: "st", label: "Business Solution" },
-];
-
-/* ───────────────────────────── Gallery ────────────────────────────── */
-/*
- * Put photos in public/images/gallery/ and list them here.
- * Category must be one of: Competition, Working Sessions, Pitch Practice,
- * Travel, Team, Behind the Scenes. Missing files are skipped automatically.
- */
-
-export const gallery: GalleryImage[] = [
-  {
-    src: "/images/team/botb-team-2026.jpg",
-    alt: teamPhoto.alt,
-    category: "Team",
-    caption: "The team at the 2026 HSI Battle of the Brains.",
-  },
-  // {
-  //   src: "/images/gallery/working-session-1.jpg",
-  //   alt: "Three teammates sketching ideas on a whiteboard.",
-  //   category: "Working Sessions",
-  //   caption: "An early brainstorming session.",
-  // },
-];
-
-export const galleryEmptyMessage = "Photos from the week will be added here soon.";
+export const dashboardImage = {
+  src: "/images/onebridge/dashboard-mockup.webp",
+  width: 1200,
+  height: 777,
+  alt: "The OneBridge dashboard from our final presentation, shown on a laptop with sample business data.",
+};

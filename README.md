@@ -1,380 +1,110 @@
 # Southwestern × BOTB 2026
 
 A student-created website for the seven Southwestern University students and three coaches who represented
-Southwestern at the **2026 HSI Battle of the Brains** (September 28 – October 2, 2026), Southwestern's second
-year at the competition.
+Southwestern at the **2026 HSI Battle of the Brains** (September 28 to October 2, 2026), Southwestern's second
+year at the competition. The team built **OneBridge** in 24 hours, was named a finalist, and took 1st place for
+business solution.
 
 > This is a student-created team website. It is not an official website of Southwestern University or
 > HSI Battle of the Brains.
 
-Built with React, Vite, TypeScript, Tailwind CSS, Framer Motion and Lucide icons. Fonts (Bricolage Grotesque,
-Instrument Sans, Instrument Serif) are bundled with the site, so it makes no requests to Google or other font
-services.
+Built with React, Vite and TypeScript, plain CSS, three.js for the hero animation, and Lucide icons. Fonts
+(Schibsted Grotesk and Public Sans) are bundled with the site, so it makes no requests to font services.
+
+**Live site:** https://codydiezz-droid.github.io/Battle-of-the-Brains/
 
 ---
 
-## Contents
+## The page, top to bottom
 
-1. [Run the website on your computer](#1-run-the-website-on-your-computer)
-2. [Where everything lives](#2-where-everything-lives)
-3. [Add or replace the two main competition images](#3-add-or-replace-the-two-main-competition-images)
-4. [Add a student or coach headshot](#4-add-a-student-or-coach-headshot)
-5. [Change a person's bio and details](#5-change-a-persons-bio-and-details)
-6. [Change image positioning (cropping)](#6-change-image-positioning-cropping)
-7. [Add LinkedIn profiles](#7-add-linkedin-profiles)
-8. [Hide or show email addresses](#8-hide-or-show-email-addresses)
-9. [Add gallery images](#9-add-gallery-images)
-10. [Edit the journey timeline](#10-edit-the-journey-timeline)
-11. [Update the project section](#11-update-the-project-section)
-12. [Image credits](#12-image-credits)
-13. [Deploy to GitHub Pages](#13-deploy-to-github-pages)
-14. [Photo status checklist](#14-photo-status-checklist)
-15. [Troubleshooting](#15-troubleshooting)
+| Section | What it shows | Where the content lives |
+| --- | --- | --- |
+| Hero | Headline, award line, and a three.js bridge of light | `src/sections/Hero.tsx`, `result` and `event` in `siteData.ts` |
+| Group photo and facts | The team and coaches, then five facts | `groupPhoto`, `src/sections/Group.tsx` |
+| Meet the seven | A card for each student: portrait, home country, bio, LinkedIn | `team` |
+| The coaches | Portrait, LinkedIn and Southwestern profile | `coaches`, `coachesIntro` |
+| The week | A timeline of the week with event photos | `week`, `photos` |
+| OneBridge | The problem as a scroll story, how it works, how we built it, pricing, links | `onebridge`, `presentation` |
+| Photos | Every event photo, with a lightbox | `gallery` |
+| Thank you | Acknowledgments and a one-line footer | `gratitude` |
 
 ---
 
-## 1. Run the website on your computer
+## Run it on your computer
 
-You need **Node.js 20.19 or newer** (Node 22 LTS is recommended). Download it from
-[nodejs.org](https://nodejs.org/), then open a terminal in this folder:
-
-```bash
-npm install        # first time only: downloads the libraries the site uses
-npm run dev        # starts a local preview at http://localhost:5173
-```
-
-Leave `npm run dev` running while you edit. The page refreshes by itself when you save a file or add a photo.
-
-Other commands:
+You need **Node.js 20.19 or newer**. Open a terminal in this folder:
 
 ```bash
-npm run build      # checks for errors and creates the finished site in the dist/ folder
-npm run preview    # serves the finished dist/ folder so you can check it before publishing
+npm install        # first time only
+npm run dev        # local preview at http://localhost:5173
+npm run build      # checks for errors and builds the site into dist/
+npm run preview    # serves dist/ so you can check it before publishing
 ```
 
 ---
 
-## 2. Where everything lives
+## Where everything lives
 
 ```
 public/
-  favicon.svg
   images/
-    botb-2026-southwestern.jpg     ← the 2026 competition graphic
-    team/
-      botb-team-2026.jpg           ← the team photo at the competition
-      <student headshots>.jpg
-    coaches/                       ← coach headshots
-    gallery/                       ← behind-the-scenes photos
-    journey/                       ← optional photos for timeline steps
+    team/          ← student portraits (WebP) and the team-and-coaches photo
+    coaches/       ← coach portraits
+    event/         ← event photos, each as -800.webp and -1600.webp
+    onebridge/     ← the dashboard image
+  presentation/    ← the final pitch deck
 src/
   data/
-    siteData.ts       ← ★ THE FILE YOU EDIT: people, emails, bios, journey, project, gallery, settings
-    imageCredits.ts   ← where each photo of a person came from
-    types.ts          ← the list of optional fields each person/photo can have
-  sections/           ← one file per page section (Hero, Story, Team, Coaches, …)
-  components/         ← reusable pieces (team card, coach card, timeline, gallery, …)
-  index.css           ← colours, fonts and a few shared styles
+    siteData.ts    ← ★ THE FILE YOU EDIT: people, bios, the week, photos, OneBridge, settings
+    types.ts       ← what each entry in siteData.ts can contain
+  sections/        ← one file per page section
+  components/      ← the 3D hero, OneBridge story, gallery and photo pieces
+  lib/             ← small helpers (image paths, page motion)
+  index.css        ← all styles, with the colours at the top
 ```
-
-**Almost every change is made in `src/data/siteData.ts`.** Components never hardcode names, emails or bios, so
-you never need to hunt through the code to update a person.
-
-### How photos work
-
-Photo paths in `siteData.ts` start with `/images/…` and point inside the `public/` folder. For example,
-`image: "/images/team/emma-sanchez.jpg"` means the file `public/images/team/emma-sanchez.jpg`.
-
-**If the file doesn't exist yet, the site shows an intentional placeholder** (initials for people, a typographic
-panel for the two main images). It never shows a broken image. When you run `npm run dev` or `npm run build`,
-the terminal lists any photo that is referenced but missing:
-
-```
-[images] 12 photo(s) referenced in src/data are not in public/ yet (a placeholder is shown instead):
-  · public/images/team/botb-team-2026.jpg
-  ...
-```
-
-**Photo sizes:** big phone photos can be 5–10 MB. Resize before adding them so the site loads quickly on
-phones. Aim for about **2400 px wide** for the team photo and gallery images, and **900–1200 px tall** for
-headshots, saved as JPEG (quality ~80). On a Mac, Preview → Tools → Adjust Size works well. On Windows, use the
-Photos app's Resize option.
 
 ---
 
-## 3. Add or replace the two main competition images
+## Editing content
 
-| Image | Save it as | Used in |
-| --- | --- | --- |
-| Team photo in front of the Home Depot Technology backdrop | `public/images/team/botb-team-2026.jpg` | Large photo right under the opening headline, plus the gallery |
-| 2026 HSI Battle of the Brains / Southwestern graphic | `public/images/botb-2026-southwestern.jpg` | "The competition" section |
+Everything on the page comes from `src/data/siteData.ts`.
 
-To replace either one, save the new file **with exactly the same name** over the old one. Nothing else needs to
-change.
+- **Bios, home countries, LinkedIn:** edit the person's entry in `team` or `coaches`. Optional fields can be
+  left as `""` and the layout adapts. `country` is used to count how many countries the team comes from.
+- **Coach titles:** fill in `title` once confirmed. Until then each coach shows "Coach".
+- **Emails:** `showStudentEmails` and `showCoachEmails` are `false`, so no address appears on the page.
+- **The result:** `result.award` and `result.summary`. Southwestern took 1st place for business solution and
+  was a finalist. It did not win the overall competition, so never word it that way.
 
-To use a different file name, update `teamPhoto.src` or `competitionGraphic.src` in `src/data/siteData.ts`.
-You can also edit the alt text (`alt`) and the caption under the team photo (`caption`, `date`) there.
+### Adding an event photo
 
-**The team photo is shown uncropped by default**, so no one is ever cut out of the frame. See
-[section 6](#6-change-image-positioning-cropping) if you'd like to crop it on phones.
+Every event photo has two sizes. With ImageMagick:
 
----
-
-## 4. Add a student or coach headshot
-
-### Photo rules (please keep these)
-
-Only use a photo when **the source clearly identifies that exact person**. In order of preference:
-
-1. A photo the student or coach sends you directly
-2. An official Southwestern University page (news story, faculty/staff profile, department page)
-3. Southwestern Athletics
-4. An official fellowship or organization profile
-
-**Never** guess who someone is from a group photo, use a search result because someone "looks similar", use
-social media photos without asking, use a photo of someone with a similar name, use AI-generated faces, or
-scrape LinkedIn profile pictures.
-
-### Steps
-
-1. Save the photo in `public/images/team/` (students) or `public/images/coaches/` (coaches) using the file name
-   already listed for that person in `siteData.ts`:
-
-   | Person | File |
-   | --- | --- |
-   | Asin Fathima Allavudeen | `public/images/team/asin-allavudeen.png` |
-   | Emma Sanchez | `public/images/team/emma-sanchez.png` |
-   | Juan Carlos | `public/images/team/juan-carlos.png` |
-   | Jade Cindy Foka | `public/images/team/jade-foka.jpg` |
-   | Cody Diez Jennings | `public/images/team/cody-diez-jennings.png` |
-   | Elias Sarwana | `public/images/team/elias-sarwana.png` |
-   | Alyanna Martinez | `public/images/team/alyanna-martinez.png` |
-   | Dr. Debika Sihi | `public/images/coaches/debika-sihi.jpg` |
-   | Abby Dings | `public/images/coaches/abby-dings.jpg` |
-   | Adrian D. Ramirez | `public/images/coaches/adrian-ramirez.jpg` |
-
-2. That's it: the photo replaces the initials automatically. Portrait-shaped photos (taller than wide) look
-   best for coaches (4:5 frame); student portraits are circles, so square photos work best. PNG or JPEG both work, as long as the extension matches the `image` path.
-3. If the photo came from a website, add or update its entry in `src/data/imageCredits.ts`
-   (see [section 12](#12-image-credits)).
-
-Alt text is generated as "Portrait of *Full Name*". To write your own, add `imageAlt: "…"` to that person.
-
----
-
-## 5. Change a person's bio and details
-
-Open `src/data/siteData.ts` and find the person in `team` (students) or `coaches`. Every field below is
-optional. Fill in only what the person has shared or approved, and leave the rest as `""`:
-
-```ts
-{
-  name: "Emma Sanchez",
-  firstName: "Emma",            // used for "Meet Emma"
-  initials: "ES",               // shown until a photo is added
-  email: "sancheze@southwestern.edu",
-  image: "/images/team/emma-sanchez.jpg",
-  major: "",                    // e.g. "Computer Science"
-  minor: "",
-  classYear: "",                // "2027" displays as "Class of 2027"
-  hometown: "",
-  role: "",                     // e.g. "Design lead"
-  bio: "",                      // a sentence or two
-  personalQuote: "",            // shown in the profile pop-up
-  linkedin: "",
-  objectPosition: "",           // see section 6
-},
+```bash
+magick photo.jpg -auto-orient -strip -resize "1600x1600>" -quality 74 public/images/event/name-1600.webp
+magick photo.jpg -auto-orient -strip -resize "800x800>"  -quality 72 public/images/event/name-800.webp
 ```
 
-- **Team cards** show the name, "Southwestern University", major/class year (if set) and the first lines of the
-  bio.
-- **Clicking a card** opens a profile with everything that's been filled in. If nothing is filled in yet, it
-  shows a simple line about representing Southwestern, so the profile never looks empty.
-- **Coaches** also accept `honorific` (e.g. `"Dr."`), `title`, `department` and `profileUrl` (a link to their
-  official Southwestern profile).
+Then add it to `photos` in `siteData.ts` with its width, height (of the 1600 file), alt text and caption, and
+list it in `gallery` or in a step of `week`.
 
-The longer text blocks (the "Our story" paragraphs, the competition note and the thank-you message) are near
-the top of `siteData.ts` under `story`, `competition` and `gratitude`.
+**Photo rules.** Only use photos the team took or was given. Never identify a person from a group photo:
+captions name people only when the photographer did. Never use AI-generated faces. Don't filter or retouch.
 
----
-
-## 6. Change image positioning (cropping)
-
-Headshots are shown in a fixed 4:5 frame, so very wide or tall photos get cropped. `objectPosition` decides
-which part stays visible. It takes two numbers: **horizontal % and vertical %**.
-
-```ts
-objectPosition: "50% 20%",   // centred, keep the top of the photo (good for faces)
-objectPosition: "35% 30%",   // shift the frame left a little
-```
-
-The default for portraits is `"50% 25%"`, which keeps faces near the top in view.
-
-**Different positions for phones and computers:**
-
-```ts
-objectPosition: { mobile: "50% 15%", desktop: "50% 30%" },
-```
-
-### Cropping the team photo
-
-The team photo (`teamPhoto` in `siteData.ts`) is uncropped by default. To give it a fixed shape, add an
-`aspectRatio`, then use `objectPosition` to keep everyone in frame:
-
-```ts
-export const teamPhoto = {
-  src: "/images/team/botb-team-2026.jpg",
-  // ...
-  aspectRatio: { mobile: "4 / 3" },                     // crop only on phones
-  objectPosition: { mobile: "50% 45%", desktop: "50% 40%" },
-};
-```
-
-Always check on a phone afterwards (or use your browser's device toolbar) to make sure no one at the edges is cut
-off. If in doubt, leave `aspectRatio` out.
+The event photos came from the team's shared Google Drive. Captions follow the file names the coaches and
+teammates gave them.
 
 ---
 
-## 7. Add LinkedIn profiles
+## Deploy to GitHub Pages
 
-Paste the full profile address into that person's `linkedin` field:
+`.github/workflows/deploy.yml` builds and publishes the site whenever the default branch changes. Pages is
+already enabled (Settings → Pages → Source: GitHub Actions). Pull requests are built as a check but not
+published.
 
-```ts
-linkedin: "https://www.linkedin.com/in/your-name/",
-```
-
-A small LinkedIn link appears on their card and in their profile. Leave it as `""` to hide it.
-
----
-
-## 8. Hide or show email addresses
-
-At the top of `src/data/siteData.ts`:
-
-```ts
-export const settings = {
-  showStudentEmails: false,
-  showCoachEmails: false,
-  // ...
-};
-```
-
-- `false` (the default): **no email address is rendered anywhere on the page.** This is checked: with both
-  settings off, the page contains zero email addresses.
-- `true`: an "Email" link appears on each card for that group.
-
-**Important:** the addresses are still written in `siteData.ts` and in the site's JavaScript file. If the
-repository is public (GitHub Pages on a free account needs a public repository), anyone browsing the code can
-read them. If that matters, delete the addresses from `siteData.ts` (set `email: ""`) instead of only hiding
-them.
-
-To show a general contact link in the footer, set `contactEmail` in `settings`.
-
----
-
-## 9. Add gallery images
-
-1. Put the photos in `public/images/gallery/` (resized as described in [section 2](#2-where-everything-lives)).
-2. Add one entry per photo to the `gallery` list in `siteData.ts`:
-
-```ts
-export const gallery: GalleryImage[] = [
-  {
-    src: "/images/gallery/working-session-1.jpg",
-    alt: "Three teammates sketching ideas on a whiteboard.",   // describe what's happening
-    category: "Working Sessions",
-    caption: "An early brainstorming session.",                // optional
-  },
-  // ...
-];
-```
-
-`category` must be one of: `Competition`, `Working Sessions`, `Pitch Practice`, `Travel`, `Team`,
-`Behind the Scenes`. Filter buttons appear only for categories that have photos.
-
-Clicking a photo opens a lightbox (arrow keys or swiping move between photos; Escape closes it). Until at least
-one gallery photo exists, the section shows a short "photos will be added here soon" note (editable as
-`galleryEmptyMessage`). The team photo is already listed, so it appears in the gallery once it's added.
-
-Please only post photos of people who are comfortable being on the site.
-
----
-
-## 10. Edit the journey timeline
-
-The four stages of the 24-hour competition are in the `journey` list in `siteData.ts`. Keep each line short.
-
-```ts
-{
-  title: "Build",
-  description: "Our team combined business strategy, research, data analysis, design, AI, and financial modeling to create OneBridge.",
-  date: "",                                         // optional small label
-  image: "/images/journey/brainstorming.jpg",       // optional photo
-  imageAlt: "The team around a table covered in sticky notes.",
-},
-```
-
-Steps without an `image` stay purely typographic, so there are no empty boxes.
-
----
-
-## 11. Update the project section
-
-The OneBridge section reads the `project` object in `siteData.ts` (name, tagline, intro and the three steps:
-Connect, Verify, Discover). Only describe what is in the presentation: no invented numbers or claims.
-
-**The final pitch deck.** Save the original PowerPoint as `public/presentation/SU-OneBridge-Final-Pitch.pptx`.
-The "See what we built" section appears once that file exists. If you also save a PDF copy as
-`public/presentation/SU-OneBridge-Final-Pitch.pdf`, the main button opens the PDF in the browser and a second
-link downloads the PowerPoint.
-
-**The result and finalist graphic.** The wording of the result section lives in `result`. Save the official
-"Meet your 2026 Finalists" graphic as `public/images/2026-finalists.jpg` and it appears under the result.
-
-**Team + coaches photo.** Save it as `public/images/team/team-and-coaches-2026.jpg`. The "Team behind the pitch"
-section stays hidden until the file exists.
-
-**By the numbers.** Edit the `metrics` list. Numbers count up as they scroll into view; words such as
-"Finalist" are shown as they are.
-
----
-
-## 12. Image credits
-
-`src/data/imageCredits.ts` records where every photo of a person came from:
-
-```ts
-{
-  person: "Jade Cindy Foka",
-  file: "/images/team/jade-foka.jpg",
-  source: "Southwestern University News",
-  sourceUrl: "https://www.southwestern.edu/live/news/17394-jade-cindy-foka-28-becomes-third-student-in",
-  photographer: "",            // fill in if the source names one
-  usageNotes: "Portrait from an official Southwestern University feature about Jade.",
-},
-```
-
-A small "Photo credits" list appears in the footer, but only for photos that are actually on the site.
-
----
-
-## 13. Deploy to GitHub Pages
-
-The repository includes a deployment workflow (`.github/workflows/deploy.yml`). It builds the site and
-publishes it every time the repository's **default branch** changes. Other branches and pull requests are built
-as a check but not published.
-
-**One-time setup:**
-
-1. On GitHub, open the repository → **Settings** → **Pages**.
-2. Under **Build and deployment → Source**, choose **GitHub Actions**.
-3. Open the **Actions** tab → **Deploy to GitHub Pages** → **Run workflow** (on the default branch).
-4. When the run shows a green ✓ (1–2 minutes), the site is live at:
-
-   **https://codydiezz-droid.github.io/Battle-of-the-Brains/**
-
-After that, every change pushed to the default branch goes live automatically within a minute or two. If the
-first automatic run failed before step 2 was done, just re-run it after enabling Pages.
+`vite.config.ts` uses a relative `base` (`"./"`), and every path goes through `asset()` in
+`src/lib/images.ts`, so the same build works at any repository subpath or on a custom domain. If the address
+changes, update the `og:image` URL in `index.html` and `githubUrl` in `siteData.ts`.
 
 ### Publish as a single HTML file
 
@@ -382,64 +112,20 @@ first automatic run failed before step 2 was done, just re-run it after enabling
 npm run build:html
 ```
 
-This creates **`dist-html/index.html`**: the whole website in one file, with styles, scripts, fonts and photos
-embedded. Open it straight from your computer, or upload just that file to any web host as `index.html`.
-Large photos make it bigger, so resize them first (see [section 2](#2-where-everything-lives)). With both email
-settings off, the addresses are removed from this file entirely.
-
-**Why it works from a subpath:** `vite.config.ts` uses a relative `base` (`"./"`), and every image path goes
-through a small helper (`asset()` in `src/lib/images.ts`). The same build works at `/Battle-of-the-Brains/`, at
-any other repository name, or on a custom domain, with no changes.
-
-If you rename the repository or add a custom domain, also update the `og:image` address in `index.html` (it
-controls the preview picture when the link is shared) and `githubUrl` in `siteData.ts`.
+This creates `dist-html/index.html` (about 6 MB): the whole site in one file, with the script, styles, fonts and
+photos embedded. It works opened straight from your computer. The deck download needs the
+`presentation/` folder next to it. With both email settings off, the addresses are removed from the file.
 
 ---
 
-## 14. Photo status checklist
+## Design and accessibility notes
 
-| Person | Photo | Status |
-| --- | --- | --- |
-| Asin Fathima Allavudeen | `public/images/team/asin-allavudeen.png` | Added (provided by the team) |
-| Emma Sanchez | `public/images/team/emma-sanchez.png` | Added (provided by the team) |
-| Alyanna Martinez | `public/images/team/alyanna-martinez.png` | Added (provided by the team) |
-| Elias Sarwana | `public/images/team/elias-sarwana.png` | Added (provided by the team) |
-| Juan Carlos | `public/images/team/juan-carlos.png` | Added (provided by the team) |
-| Cody Diez Jennings | `public/images/team/cody-diez-jennings.png` | Added (provided by the team) |
-| Jade Cindy Foka | `public/images/team/jade-foka.jpg` | Added (provided by the team) |
-| Dr. Debika Sihi | `public/images/coaches/debika-sihi.jpg` | Added (provided by the team) |
-| Abby Dings | `public/images/coaches/abby-dings.jpg` | Added (provided by the team) |
-| Adrian D. Ramirez | `public/images/coaches/adrian-ramirez.jpg` | Added (provided by the team) |
-| Team photo | `public/images/team/botb-team-2026.jpg` | Added |
-| Competition graphic | `public/images/botb-2026-southwestern.jpg` | Added |
-
-Student portraits are shown as equal circles with a thin gold ring (`object-fit: cover`), so photos with
-different crops and backgrounds still line up. Square photos work best; the team's circle-cropped photos were
-trimmed to the square around their circle, with no other edits. If a face sits off-centre, adjust that student's
-`objectPosition` (see [section 6](#6-change-image-positioning-cropping)). Photos are never filtered or retouched.
-
----
-
-## 15. Troubleshooting
-
-- **My photo doesn't show up.** Check the file name and folder match the `image` path exactly. Names are
-  case-sensitive on GitHub Pages: `Jade-Foka.JPG` is not the same as `jade-foka.jpg`. The terminal's
-  `[images]` list tells you which files it can't find.
-- **`npm run build` shows a red error.** It usually means a typo in `siteData.ts`, like a missing comma or
-  quote. The message includes the file and line number.
-- **The live site didn't update.** Open the **Actions** tab on GitHub and check the latest
-  "Deploy to GitHub Pages" run. A red ✗ means the build failed. Click it to see why.
-- **Someone's face is cut off.** Adjust their `objectPosition` ([section 6](#6-change-image-positioning-cropping)).
-
----
-
-### Design & accessibility notes
-
-- Colours: near-black `#111111`, Southwestern-inspired gold `#F4B41A`, warm cream `#F6F2E9`, white, and a
-  restrained deep green `#1F4A3A`. Gold is used for text only on dark backgrounds, or as a darker shade on light
-  ones, to keep contrast readable.
-- Semantic landmarks, a "Skip to content" link, visible keyboard focus, descriptive alt text, and keyboard
-  support for the menu, profiles and lightbox (Escape closes, focus returns to where you were).
-- Animations are calm (fades, small movements, a number counter, line reveals) and are reduced automatically
-  when a visitor's device has "Reduce motion" turned on.
+- **Colour:** Southwestern black, gold `#ffb81c` and cream `#f7f3ea`. On cream, gold text uses the darker
+  `#835600` to keep AA contrast. The OneBridge section switches to the product's navy, blue and orange.
+- **Motion:** sections fade up as they enter, timeline lines draw as you scroll, and photos drift slightly. The
+  three.js scene loads after first paint, pauses when off screen, and is skipped on data saver, low-memory
+  devices and for visitors with "Reduce motion" on (a static arc is shown instead). Reduced motion turns off
+  every animation.
+- **Access:** a skip link, visible two-tone focus rings, alt text on every photo, labelled new-tab links, and a
+  lightbox that traps focus, works with arrow keys and swipes, closes on Escape, and returns focus.
 - All seven students get identical cards, in no ranked order.

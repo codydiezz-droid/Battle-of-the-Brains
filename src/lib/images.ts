@@ -1,6 +1,5 @@
-import type { CSSProperties } from "react";
 import availableImages from "virtual:public-images";
-import type { ObjectPosition, ResponsivePosition } from "../data/types";
+import type { Photo } from "../data/types";
 
 /** True when the file exists in /public, so we never render a broken image. */
 export function hasImage(src?: string): src is string {
@@ -15,22 +14,14 @@ export const hasFile = hasImage;
  * served from a GitHub Pages repository subpath.
  */
 export function asset(src: string): string {
-  // Already a full URL (e.g. an image embedded by the single-file HTML build).
   if (/^(data:|https?:)/.test(src)) return src;
+  // The single-file HTML build embeds every photo and lists them here.
+  const embedded = (window as Window & { __BOTB_IMAGES__?: Record<string, string> }).__BOTB_IMAGES__;
+  if (embedded?.[src]) return embedded[src];
   return import.meta.env.BASE_URL + src.replace(/^\//, "");
 }
 
-/**
- * CSS variables consumed by the `.img-position` utility in index.css, which
- * switches object-position between phones and larger screens.
- */
-export function positionStyle(
-  position: ObjectPosition | ResponsivePosition | undefined,
-  fallback = "50% 50%",
-): CSSProperties {
-  const { mobile, desktop } = typeof position === "string" ? { mobile: position, desktop: position } : (position ?? {});
-  return {
-    "--pos-mobile": mobile || desktop || fallback,
-    "--pos-desktop": desktop || mobile || fallback,
-  } as CSSProperties;
-}
+/** The two sizes every event photo comes in. */
+export const photoSmall = (photo: Photo) => asset(`${photo.src}-800.webp`);
+export const photoLarge = (photo: Photo) => asset(`${photo.src}-1600.webp`);
+export const photoSrcSet = (photo: Photo) => `${photoSmall(photo)} 800w, ${photoLarge(photo)} 1600w`;

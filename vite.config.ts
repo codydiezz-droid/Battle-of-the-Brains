@@ -1,7 +1,6 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 
@@ -94,9 +93,16 @@ function publicImages(): Plugin {
   };
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   // A relative base lets the same build work at a GitHub Pages repository
   // subpath (https://<user>.github.io/<repo>/) and on a custom domain.
   base: "./",
-  plugins: [react(), tailwindcss(), publicImages()],
-});
+  plugins: [react(), publicImages()],
+  build: {
+    // three.js is ~530 kB but loads on demand after first paint.
+    chunkSizeWarningLimit: mode === "single" ? 900 : 600,
+    // The single-file build (npm run build:html) needs one script, so it keeps
+    // the 3D scene in the main bundle instead of a separate chunk.
+    rolldownOptions: mode === "single" ? { output: { codeSplitting: false } } : {},
+  },
+}));

@@ -42,20 +42,14 @@ let css = readFileSync(path.join(assetsDir, cssFile), "utf8").replace(
   (_, f) => `url(${dataUri(path.join(assetsDir, f))})`,
 );
 
-// Photos referenced by the site data ("/images/…" strings in the bundle).
-// Each photo is embedded once as a constant and every reference points to it.
+// Every photo in public/images, embedded once. asset() in src/lib/images.ts
+// looks paths up in this table, so photo paths built at runtime work too.
 let js = readFileSync(path.join(assetsDir, jsFile), "utf8");
-const declarations = [];
+const images = {};
 for (const file of walk(path.join(dist, "images"))) {
-  const sitePath = "/" + path.relative(dist, file).split(path.sep).join("/");
-  // The minifier may quote strings with ", ' or `.
-  const quoted = ['"', "'", "`"].map((q) => q + sitePath + q).filter((lit) => js.includes(lit));
-  if (quoted.length === 0) continue;
-  const name = `__botbImage${declarations.length}`;
-  declarations.push(`const ${name}=${JSON.stringify(dataUri(file))};`);
-  for (const lit of quoted) js = js.split(lit).join(name);
+  images["/" + path.relative(dist, file).split(path.sep).join("/")] = dataUri(file);
 }
-js = declarations.join("\n") + "\n" + js;
+js = `window.__BOTB_IMAGES__=${JSON.stringify(images)};\n` + js;
 // With both email settings off, remove the addresses from the file entirely,
 // not just from the visible page.
 const siteData = readFileSync(path.resolve("src/data/siteData.ts"), "utf8");
