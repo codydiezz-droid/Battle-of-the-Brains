@@ -26,6 +26,35 @@ import { GOAL_H, GOAL_HALF, SPOT_Z, buildStadium } from "./stadium";
 export type Role = "shoot" | "keep";
 export type Outcome = "goal" | "save" | "post" | "bar" | "wide" | "over";
 
+/** A strike, fully decided at release, so it can be sent to the other player. */
+export interface Shot {
+  tx: number;
+  ty: number;
+  speed: number;
+  spin: number;
+  power: number;
+  perfect: boolean;
+  /** Which way the striker's hips open: usually honest, sometimes a disguise. */
+  cue: number;
+}
+
+/** A keeper's dive as sent online: its start is relative to the moment of the kick. */
+export interface SentDive {
+  rel: number;
+  fromX: number;
+  tx: number;
+  ty: number;
+  dur: number;
+  maxLat: number;
+}
+
+export interface SentResult {
+  outcome: Outcome;
+  x: number;
+  y: number;
+  speed: number;
+}
+
 export interface KickResult {
   role: Role;
   outcome: Outcome;
@@ -89,6 +118,13 @@ export class Engine {
   private chargeT = 0;
   curve = 0;
   private released: { power: number; aim: { x: number; y: number }; curve: number; perfect: boolean } | null = null;
+  /** Online play: the other player controls the other end. */
+  online = false;
+  /** Online: set while the other player is not yet ready for this kick. */
+  holdShot = false;
+  private pendingShot: Shot | null = null;
+  private remoteResult: SentResult | null = null;
+  private waitingRemote = -1;
   private contactT = -1;
   private diveTarget = { x: 0, y: 0.6 };
   private result: KickResult | null = null;
@@ -177,7 +213,8 @@ export class Engine {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     // Narrow (portrait) screens need a wider lens to fit the goal.
-    this.camera.fov = w / h < 0.8 ? 62 : w / h < 1.2 ? 52 : 42;
+    this.baseFov = w / h < 0.8 ? 62 : w / h < 1.2 ? 52 : 42;
+    this.camera.fov = this.baseFov;
     this.camera.updateProjectionMatrix();
   }
 
@@ -211,9 +248,13 @@ export class Engine {
 
   /* ───────────────────────────── Kicks ───────────────────────────── */
 
-  startKick(role: Role) {
+  startKick(role: Role, online = false) {
     if (!this.shooterAv || !this.keeperAv) return;
     this.role = role;
+    this.online = online;
+    this.pendingShot = null;
+    this.remoteResult = null;
+    this.waitingRemote = -1;
     this.ball = newBall();
     this.shooter = newShooter();
     this.keeper = newKeeper();
@@ -234,9 +275,13 @@ export class Engine {
     sfx.whistle();
     if (role === "shoot") {
       const { lean } = this.keeperBrain.plan();
-      this.keeper.x = lean;
+      this.keeper.x = online ? 0 : lean;
       this.setPhase("aim");
       this.onHint("Aim with the mouse or arrow keys. Hold Space (or press and hold) to charge, release to shoot.");
+    } else if (online) {
+      this.plan = null;
+      this.setPhase("ready");
+      this.onHint("Waiting for the striker. A / D to step across while you wait.");
     } else {
       this.plan = this.shooterBrain.plan();
       this.shooter.cue = this.plan.cue;
@@ -254,6 +299,8 @@ export class Engine {
   /** Begin charging the shot (Space or pointer down). */
   private startCharge() {
     if (this.role !== "shoot" || this.phase !== "aim" || this.charging) return;
+    // Online: wait until the other player is in goal for this kick
+    if (this.holdShot) return;
     this.charging = true;
     this.chargeT = this.simT;
     this.onAction("charge");
@@ -269,6 +316,15 @@ export class Engine {
     this.released = { power: p, aim: { ...this.aim }, curve: this.curve, perfect };
     this.shooter.runStart = this.simT;
     this.shooter.cue = 0;
+    if (this.online) {
+      // Decide the strike now and send it, so both screens play the same kick
+      const shot = this.computeShot();
+      const honest = Math.sign(shot.tx) || 1;
+      shot.cue = Math.random() < 0.7 ? honest : -honest;
+      this.pendingShot = shot;
+      this.shooter.cue = shot.cue;
+      this.onLocalShot(shot);
+    }
     this.setPhase("runup");
     this.onAction("release");
     this.onHint("");
@@ -276,6 +332,11 @@ export class Engine {
 
   /** The player's strike, computed at the moment of contact from what they did. */
   private playerStrike() {
+    const s = this.computeShot();
+    this.launch(s.tx, s.ty, s.speed, s.spin, s.power);
+  }
+
+  private computeShot(): Shot {
     const r = this.released!;
     const stats = this.shooterAv!.player.stats;
     const d = this.diff;
@@ -293,7 +354,48 @@ export class Engine {
     ty = Math.max(BALL_R, ty);
     tx = clamp(tx, -9, 9);
     const speed = 13 + r.power * 17 + (stats.power - 3) * 0.6;
-    this.launch(tx, ty, speed, r.curve, r.power);
+    return { tx, ty, speed, spin: r.curve, power: r.power, perfect: r.perfect, cue: 0 };
+  }
+
+  /* ───────────────────────────── Online ───────────────────────────── */
+
+  onLocalShot: (shot: Shot) => void = () => {};
+  onLocalDive: (dive: SentDive) => void = () => {};
+  onLocalKeeperX: (x: number) => void = () => {};
+  onLocalResult: (r: SentResult) => void = () => {};
+
+  /** The other player struck the ball: start the run-up here. */
+  remoteShot(shot: Shot) {
+    if (!this.online || this.role !== "keep" || this.phase !== "ready") return;
+    this.pendingShot = shot;
+    this.shooter.cue = shot.cue;
+    this.shooter.runStart = this.simT;
+    this.setPhase("runup");
+    this.onHint("Here it comes. Read the hips, dive with the strike.");
+  }
+
+  /** The other player's keeper dived. */
+  remoteDive(d: SentDive) {
+    if (!this.online || this.role !== "shoot" || this.shooter.runStart === null) return;
+    this.keeper.dive = { start: this.shooter.runStart + RUNUP + d.rel, fromX: d.fromX, tx: d.tx, ty: d.ty, dur: d.dur, maxLat: d.maxLat };
+    this.keeper.x = d.fromX;
+  }
+
+  remoteKeeperX(x: number) {
+    if (!this.online || this.role !== "shoot" || this.keeper.dive) return;
+    this.keeper.moving = Math.abs(x - this.keeper.x) > 0.01 ? Math.sign(x - this.keeper.x) : 0;
+    this.keeper.x = x;
+  }
+
+  /** The keeper's screen decides saves; the striker's screen shows that result. */
+  remoteResultIn(r: SentResult) {
+    if (this.online && this.role === "shoot") this.remoteResult = r;
+  }
+
+  private sendDive() {
+    const d = this.keeper.dive;
+    if (!this.online || !d || this.shooter.runStart === null) return;
+    this.onLocalDive({ rel: d.start - (this.shooter.runStart + RUNUP), fromX: d.fromX, tx: d.tx, ty: d.ty, dur: d.dur, maxLat: d.maxLat });
   }
 
   private aiStrike() {
@@ -320,6 +422,8 @@ export class Engine {
   private playerDive() {
     if (this.role !== "keep" || this.keeper.dive) return;
     if (this.phase !== "ready" && this.phase !== "runup" && this.phase !== "flight") return;
+    // Online, there is nothing to dive at until the striker has struck
+    if (this.online && this.phase === "ready") return;
     const stats = this.keeperAv!.player.stats;
     const t = this.diveTarget;
     this.keeper.dive = {
@@ -327,11 +431,13 @@ export class Engine {
       fromX: this.keeper.x,
       tx: t.x,
       ty: t.y,
-      dur: keeperDiveTime(0.47, stats),
-      maxLat: keeperMaxLat(stats, 1.0),
+      // The human keeper dives a little quicker and further than the AI, so saves are reachable
+      dur: keeperDiveTime(0.41, stats),
+      maxLat: keeperMaxLat(stats, 1.15),
     };
     this.keeper.moving = 0;
     this.onAction("dive");
+    this.sendDive();
   }
 
   /* ───────────────────────────── Input ───────────────────────────── */
@@ -400,6 +506,7 @@ export class Engine {
     if (this.role === "keep" && (this.phase === "ready" || this.phase === "runup") && !this.keeper.dive) {
       this.keeper.x = clamp(this.keeper.x + dir * 0.35, -1.4, 1.4);
       this.onAction("shuffle");
+      if (this.online) this.onLocalKeeperX(this.keeper.x);
     }
   }
 
@@ -493,11 +600,12 @@ export class Engine {
       if (mv && !this.keeper.dive && this.contactT < 0) {
         this.keeper.x = clamp(this.keeper.x + mv * 2.4 * dt, -1.4, 1.4);
         this.keeper.moving = mv;
+        if (this.online) this.onLocalKeeperX(this.keeper.x);
         this.onAction("shuffle");
       } else this.keeper.moving = 0;
       // Steering lasts a moment into the dive, and at most until just after the kick
       const kd = this.keeper.dive;
-      const steering = !!kd && t < Math.min(kd.start + 0.4, Math.max(kd.start + 0.16, (this.contactT > 0 ? this.contactT : Infinity) + 0.22));
+      const steering = !!kd && t < Math.min(kd.start + 0.4, Math.max(kd.start + 0.16, (this.contactT > 0 ? this.contactT : Infinity) + 0.3));
       if (!this.keeper.dive || steering) {
         if (this.mouseActive) this.updateDiveFromMouse();
         const l = this.keys.has("arrowleft");
@@ -520,23 +628,28 @@ export class Engine {
         const side = Math.sign(d.tx - d.fromX);
         let nx = this.diveTarget.x;
         if (side && Math.sign(nx - d.fromX) !== side) nx = d.fromX + side * 0.8;
-        d.tx = nx;
-        d.ty = this.diveTarget.y;
+        if (d.tx !== nx || d.ty !== this.diveTarget.y) {
+          d.tx = nx;
+          d.ty = this.diveTarget.y;
+          this.sendDive();
+        }
       }
     }
 
     // Phase flow
-    if (this.phase === "ready" && e > 0.9) {
+    if (this.phase === "ready" && e > 0.9 && !this.online) {
       this.shooter.runStart = t;
       this.setPhase("runup");
     }
     if (this.phase === "runup" && this.shooter.runStart !== null && t - this.shooter.runStart >= RUNUP) {
-      if (this.role === "shoot") this.playerStrike();
+      const s = this.pendingShot;
+      if (s) this.launch(s.tx, s.ty, s.speed, s.spin, s.power);
+      else if (this.role === "shoot") this.playerStrike();
       else this.aiStrike();
     }
 
     // AI keeper reacts to the flight
-    if (this.phase === "flight" && this.role === "shoot" && !this.keeper.dive) {
+    if (this.phase === "flight" && this.role === "shoot" && !this.keeper.dive && !this.online) {
       const dive = this.keeperBrain.update(t, this.ball, this.keeper.x);
       if (dive) this.keeper.dive = dive;
     }
@@ -623,6 +736,11 @@ export class Engine {
     else if (b.touchedFrame && quiet > 0.8) done = true;
     else if (since > 3) done = true;
     if (!done) return;
+    // Online striker: wait (briefly) for the keeper's screen to call it
+    if (this.online && this.role === "shoot" && !this.remoteResult) {
+      if (this.waitingRemote < 0) this.waitingRemote = t;
+      if (t - this.waitingRemote < 4) return;
+    }
     this.resolve(t);
   }
 
@@ -630,12 +748,16 @@ export class Engine {
     const b = this.ball;
     const shooting = this.role === "shoot";
     const speed = this.kickSpeed;
-    const cross = b.crossAt ?? { x: b.p.x, y: b.p.y };
+    let cross = b.crossAt ?? { x: b.p.x, y: b.p.y };
     let outcome: Outcome;
     if (b.goal) outcome = "goal";
     else if (b.saved) outcome = "save";
     else if (b.touchedFrame) outcome = b.touchedFrame;
     else outcome = cross.y > GOAL_H ? "over" : "wide";
+    if (this.online && this.role === "shoot" && this.remoteResult) {
+      outcome = this.remoteResult.outcome;
+      cross = { x: this.remoteResult.x, y: this.remoteResult.y };
+    }
 
     let label: string;
     const top = Math.abs(cross.x) > 2.7 && cross.y > 1.5;
@@ -660,7 +782,8 @@ export class Engine {
       shotX: cross.x,
       speed,
     };
-    if (shooting) this.keeperBrain.remember(this.released?.aim.x ?? cross.x);
+    if (shooting && !this.online) this.keeperBrain.remember(this.released?.aim.x ?? cross.x);
+    if (this.online && !shooting) this.onLocalResult({ outcome, x: cross.x, y: cross.y, speed });
 
     // Reactions
     if (outcome === "goal") {
@@ -792,6 +915,11 @@ export class Engine {
       look.set(b.x * 0.4, 1.0, Math.max(0, b.z * 0.25));
       this.camera.position.copy(pos);
       this.camera.lookAt(look);
+      if (this.camera.fov !== this.baseFov) {
+        this.camera.fov = this.baseFov;
+        this.camera.updateProjectionMatrix();
+      }
+      this.stadium.setNetOpacity(0.55);
       return;
     }
     if (this.role === "shoot") {
@@ -810,9 +938,9 @@ export class Engine {
       }
     } else {
       // Behind the goal, looking out at the penalty taker
-      // High over the keeper's shoulder, so the striker's run-up is in view
-      pos.set(this.keeper.x * 0.5 + 0.9, 3.1, -4.4);
-      look.set(this.keeper.x * 0.2, 0.7, SPOT_Z);
+      // High behind the goal: the whole goal mouth, the keeper and the striker in one view
+      pos.set(this.keeper.x * 0.25, 3.7, -5.3);
+      look.set(this.keeper.x * 0.1, 0.55, SPOT_Z * 0.75);
       if (this.phase === "flight" || this.phase === "result") look.set(b.x * 0.3, 1.0, Math.max(4, b.z));
     }
     const ease = this.phase === "flight" ? 0.12 : this.phase === "result" ? 0.05 : 0.08;
@@ -825,12 +953,21 @@ export class Engine {
       this.camera.position.y += (Math.random() - 0.5) * 0.06 * this.shake;
     }
     this.camera.lookAt(this.camLook);
+    // A wider lens in goal, so all of the goal fits; the net fades so it doesn't hide the play
+    const wantFov = this.baseFov + (this.role === "keep" ? 14 : 0);
+    if (Math.abs(this.camera.fov - wantFov) > 0.05) {
+      this.camera.fov += (wantFov - this.camera.fov) * 0.15;
+      this.camera.updateProjectionMatrix();
+    }
+    this.stadium.setNetOpacity(this.role === "keep" ? 0.16 : 0.55);
   }
+
+  private baseFov = 42;
 
   /** Snap the camera into place (when a kick starts). */
   snapCamera() {
-    this.camPos.set(this.role === "shoot" ? 0.9 : 0.9, this.role === "shoot" ? 2.0 : 3.1, this.role === "shoot" ? SPOT_Z + 6.4 : -4.4);
-    this.camLook.set(this.role === "shoot" ? -0.1 : 0, this.role === "shoot" ? 1.0 : 0.7, this.role === "shoot" ? 0 : SPOT_Z);
+    this.camPos.set(this.role === "shoot" ? 0.9 : 0, this.role === "shoot" ? 2.0 : 3.7, this.role === "shoot" ? SPOT_Z + 6.4 : -5.3);
+    this.camLook.set(this.role === "shoot" ? -0.1 : 0, this.role === "shoot" ? 1.0 : 0.55, this.role === "shoot" ? 0 : SPOT_Z * 0.75);
   }
 
 }

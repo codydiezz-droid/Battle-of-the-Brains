@@ -170,7 +170,7 @@ export class Avatar {
       for (const [y, r] of [
         [-0.14, 0.12],
         [-0.38, 0.12],
-        [-0.62, keeper ? 0.19 : 0.12],
+        [-0.62, keeper ? 0.23 : 0.12],
       ] as const) {
         const marker = new Object3D();
         marker.position.y = y;

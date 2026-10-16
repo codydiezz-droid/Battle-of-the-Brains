@@ -51,6 +51,7 @@ export interface Stadium {
   /** Push the back of the net out where the ball hit. */
   rippleNet: (x: number, y: number, strength: number) => void;
   shakeFrame: (amount: number) => void;
+  setNetOpacity: (o: number) => void;
   update: (t: number, dt: number, cheer: number) => void;
 }
 
@@ -294,6 +295,9 @@ export function buildStadium(): Stadium {
     scene,
     rippleNet(x, y, strength) {
       ripples.push({ x, y, k: strength });
+    },
+    setNetOpacity(o) {
+      netMat.opacity = o;
     },
     shakeFrame(amount) {
       shake = Math.max(shake, amount);

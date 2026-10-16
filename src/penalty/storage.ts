@@ -10,6 +10,8 @@ export interface Save {
   /** Opponents: a player id, or "random". */
   cpuShooterId: string;
   cpuKeeperId: string;
+  /** Name shown to the other player online. */
+  nick: string;
   best: {
     challenge: Record<Difficulty, number>;
     keeper: Record<Difficulty, number>;
@@ -28,6 +30,7 @@ const fresh = (): Save => ({
   keeperId: "jade",
   cpuShooterId: "random",
   cpuKeeperId: "random",
+  nick: "",
   best: { challenge: { easy: 0, medium: 0, hard: 0 }, keeper: { easy: 0, medium: 0, hard: 0 } },
   shootout: { wins: 0, losses: 0 },
   totals: { shots: 0, goals: 0, faced: 0, saves: 0, perfect: 0 },

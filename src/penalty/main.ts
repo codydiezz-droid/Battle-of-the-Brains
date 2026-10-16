@@ -3,12 +3,13 @@ import "@fontsource-variable/public-sans";
 import "./penalty.css";
 import { DIFF, type Difficulty } from "./ai";
 import * as sfx from "./audio";
-import { Engine, type KickResult, type Role } from "./game";
+import { Engine, type KickResult, type Role, type SentDive, type SentResult, type Shot } from "./game";
+import { joinRoom, newCode, type NetPeer, type NetRoom } from "./net";
 import { byId, roster, type Player } from "./players";
 import { persist, save } from "./storage";
 import { cardPortrait } from "./textures";
 
-type Mode = "challenge" | "keeper" | "shootout" | "practice";
+type Mode = "challenge" | "keeper" | "shootout" | "practice" | "online";
 
 const $ = <T extends HTMLElement = HTMLElement>(sel: string) => document.querySelector(sel) as T;
 const siteUrl = document.body.dataset.siteUrl || "../";
@@ -21,7 +22,7 @@ sfx.setMuted(save.muted);
 
 /* ───────────────────────────── Screens ───────────────────────────── */
 
-const screens = ["menu", "select", "hud", "paused", "end"] as const;
+const screens = ["menu", "select", "hud", "paused", "end", "online", "lobby"] as const;
 type Screen = (typeof screens)[number];
 function show(...visible: Screen[]) {
   for (const s of screens) $(`#${s}`).hidden = !visible.includes(s);
@@ -101,6 +102,7 @@ let tab: Slot = "shoot";
 
 /** Which of the four players a mode uses. */
 function slots(): Slot[] {
+  if (mode === "online") return ["shoot", "keep"];
   if (mode === "challenge") return ["shoot", "cpuKeep"];
   if (mode === "keeper") return ["keep", "cpuShoot"];
   return ["shoot", "keep", "cpuShoot", "cpuKeep"];
@@ -110,7 +112,8 @@ function openSelect() {
   const used = slots();
   document.querySelectorAll<HTMLButtonElement>("[data-tab]").forEach((b) => (b.hidden = !used.includes(b.dataset.tab as Slot)));
   tab = used[0];
-  $("#select-title").textContent = "Pick the players";
+  $("#select-title").textContent = mode === "online" ? "Pick your players" : "Pick the players";
+  $("#kickoff").textContent = mode === "online" ? "Back to the lobby" : "Kick off";
   renderCards();
   show("select");
   $("#cards").querySelector<HTMLButtonElement>("[aria-pressed=true]")?.focus();
@@ -187,10 +190,17 @@ document.querySelectorAll<HTMLButtonElement>("[data-tab]").forEach((b) =>
   }),
 );
 $("#select-back").addEventListener("click", () => {
+  if (mode === "online" && net) return backToLobby();
   syncMenu();
   show("menu");
 });
-$("#kickoff").addEventListener("click", () => startMatch());
+$("#kickoff").addEventListener("click", () => {
+  if (mode === "online" && net) {
+    net.room.setPresence({ taker: save.shooterId, keeper: save.keeperId });
+    return backToLobby();
+  }
+  startMatch();
+});
 
 /* ───────────────────────────── Match ───────────────────────────── */
 
@@ -225,6 +235,8 @@ function startMatch() {
   engine.resetMemory();
   $("#practice-switch").hidden = mode !== "practice";
   $("#team-cpu").hidden = mode !== "shootout";
+  $("#pause").hidden = false;
+  $("#team-cpu .team-name").textContent = "CPU";
   show("hud");
   sfx.startAmbience();
   nextKick();
@@ -265,6 +277,7 @@ function face(p: Player) {
 engine.onHint = (text) => ($("#hint").textContent = text);
 
 engine.onResult = (r) => {
+  if (net?.matchId) return onlineResult(r);
   match.kicks.push(r);
   if (r.role === "shoot") {
     match.you.push(r.outcome === "goal");
@@ -285,6 +298,7 @@ engine.onResult = (r) => {
 
 engine.onKickDone = () => {
   $("#banner").hidden = true;
+  if (net?.matchId) return onlineKickDone();
   if (match.over) return;
   const decided = matchDecided();
   if (decided) endMatch(decided);
@@ -364,6 +378,9 @@ function updateBoard() {
 
 function endMatch(result: "you" | "cpu" | "done") {
   match.over = true;
+  ($("#rematch") as HTMLButtonElement).disabled = false;
+  $("#rematch").textContent = "Rematch";
+  $("#to-lobby").hidden = true;
   sfx.stopAmbience();
   const m = match;
   const d = save.difficulty;
@@ -421,8 +438,9 @@ function endMatch(result: "you" | "cpu" | "done") {
   show("end");
 }
 
-$("#rematch").addEventListener("click", startMatch);
+$("#rematch").addEventListener("click", () => (net ? onlineRematch() : startMatch()));
 $("#end-menu").addEventListener("click", () => {
+  if (net) leaveOnline();
   syncMenu();
   show("menu");
 });
@@ -436,7 +454,8 @@ $("#practice-switch").addEventListener("click", () => {
 
 /* Pause */
 function pause() {
-  if ($("#hud").hidden || engine.paused) return;
+  // Online, both screens keep playing: no pausing one side
+  if ($("#hud").hidden || engine.paused || net?.matchId) return;
   engine.paused = true;
   show("hud", "paused");
 }
@@ -558,6 +577,426 @@ $("#coach-skip").addEventListener("click", () => {
   tutorial = null;
   $<HTMLCanvasElement>("#pitch").focus();
 });
+
+/* ───────────────────────────── Online ───────────────────────────── */
+
+/*
+ * Two players, live. Each side keeps its own presence object current and
+ * reads the other's: the striker sends the shot at release, the keeper sends
+ * their position and dive as they happen and, being the one who saw the ball
+ * arrive, decides the result for both screens.
+ */
+
+type Side = "host" | "guest";
+interface OnlineState {
+  room: NetRoom;
+  host: boolean;
+  ready: boolean;
+  matchId: string | null;
+  /** The last match id followed, so returning to the lobby doesn't rejoin it. */
+  lastMatch: string | null;
+  k: number;
+  hostShots: boolean[];
+  guestShots: boolean[];
+  kicks: KickResult[];
+  opp: NetPeer | null;
+  seenDive: string;
+  over: boolean;
+}
+let net: OnlineState | null = null;
+
+const opp = () => (net?.opp?.presence ?? {}) as Record<string, unknown> & {
+  nick?: string;
+  host?: boolean;
+  ready?: boolean;
+  taker?: string;
+  keeper?: string;
+  format?: string;
+  hostRole?: string;
+  match?: string | null;
+  k?: number;
+  shot?: Shot & { k: number };
+  dive?: SentDive & { k: number };
+  kx?: { k: number; x: number };
+  res?: SentResult & { k: number };
+};
+
+const cleanNick = (s: unknown) => (typeof s === "string" ? s.replace(/[^\p{L}\p{N} ._-]/gu, "").trim().slice(0, 16) : "") || "Player 2";
+const oppName = () => cleanNick(opp().nick);
+const safeId = (id: unknown, fallback: string) => (typeof id === "string" && roster.some((p) => p.id === id) ? id : fallback);
+
+/** The host's settings, which the guest follows. */
+function settings() {
+  const src = net?.host ? { format: hostFormat, hostRole: hostStartRole } : { format: opp().format, hostRole: opp().hostRole };
+  return { format: src.format === "shootout" ? "shootout" : "duel", hostRole: src.hostRole === "keep" ? "keep" : "shoot" } as const;
+}
+let hostFormat: "duel" | "shootout" = "duel";
+let hostStartRole: Role = "shoot";
+
+const mySide = (): Side => (net?.host ? "host" : "guest");
+function strikerSide(k: number): Side {
+  const { format, hostRole } = settings();
+  const first: Side = hostRole === "shoot" ? "host" : "guest";
+  if (format === "duel") return first;
+  return k % 2 === 0 ? first : first === "host" ? "guest" : "host";
+}
+const myRole = (k: number): Role => (strikerSide(k) === mySide() ? "shoot" : "keep");
+function picksOf(side: Side) {
+  if (side === mySide()) return { taker: byId(save.shooterId), keeper: byId(save.keeperId) };
+  const o = opp();
+  return { taker: byId(safeId(o.taker, "elias")), keeper: byId(safeId(o.keeper, "debika")) };
+}
+
+$("#open-online").addEventListener("click", () => {
+  mode = "online";
+  ($("#nick") as HTMLInputElement).value = save.nick;
+  $("#online-note").textContent = "";
+  show("online");
+});
+$("#online-back").addEventListener("click", () => {
+  syncMenu();
+  show("menu");
+});
+$("#create-game").addEventListener("click", () => joinAs(newCode(), true));
+$("#join-game").addEventListener("click", () => {
+  const code = ($("#join-code") as HTMLInputElement).value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (code.length !== 4) {
+    $("#online-note").textContent = "Enter the 4-character code your friend sees.";
+    return;
+  }
+  joinAs(code, false);
+});
+$("#join-code").addEventListener("keydown", (e) => {
+  if ((e as KeyboardEvent).key === "Enter") $("#join-game").click();
+});
+
+async function joinAs(code: string, host: boolean) {
+  save.nick = cleanNick(($("#nick") as HTMLInputElement).value);
+  persist();
+  $("#online-note").textContent = "Connecting…";
+  let room: NetRoom;
+  try {
+    room = await joinRoom(code, new URLSearchParams(location.search).has("local"));
+  } catch {
+    $("#online-note").textContent = "Couldn’t connect. Check your connection and try again.";
+    return;
+  }
+  net = { room, host, ready: false, matchId: null, lastMatch: null, k: 0, hostShots: [], guestShots: [], kicks: [], opp: null, seenDive: "", over: false };
+  room.setPresence({
+    app: "pc",
+    v: 1,
+    nick: save.nick,
+    host,
+    ready: false,
+    taker: save.shooterId,
+    keeper: save.keeperId,
+    format: host ? hostFormat : null,
+    hostRole: host ? hostStartRole : null,
+    match: null,
+    k: 0,
+  });
+  room.onPeers((peers) => onPeers(peers));
+  $("#lobby-code").textContent = code;
+  $("#lobby-transport").textContent =
+    room.transport === "live" ? "Live · connected through claude.ai" : "Same device · open this page in a second window to test";
+  syncLobbySettings();
+  renderLobby();
+  show("lobby");
+}
+
+function onPeers(peers: NetPeer[]) {
+  if (!net) return;
+  const had = !!net.opp;
+  net.opp = peers.find((p) => !p.isMe && p.presence.app === "pc") ?? null;
+  // The other player left
+  if (had && !net.opp && net.matchId && !net.over) {
+    showBanner(`${oppName()} left`, false);
+    net.matchId = null;
+    engine.phase = "idle";
+    window.setTimeout(backToLobby, 1500);
+    return;
+  }
+  const o = opp();
+  // The guest follows the host into a match (and into rematches)
+  if (net.opp && !net.host && typeof o.match === "string" && o.match !== net.lastMatch) startOnlineMatch(o.match);
+  if (net.matchId) applyRemote();
+  if (!$("#lobby").hidden) renderLobby();
+}
+
+function renderLobby() {
+  if (!net) return;
+  const o = opp();
+  const row = (nick: string, taker: Player, keeper: Player, ready: boolean, you: boolean) => {
+    const li = document.createElement("li");
+    li.innerHTML = `${face(taker)}<span><span class="lp-name"></span><span class="lp-picks"></span></span><span class="lp-ready${ready ? " on" : ""}">${ready ? "Ready" : "Not ready"}</span>`;
+    li.querySelector(".lp-name")!.textContent = you ? `${nick} (you)` : nick;
+    li.querySelector(".lp-picks")!.textContent = `Taker: ${taker.firstName} · Keeper: ${keeper.firstName}`;
+    return li;
+  };
+  const list = $("#lobby-players");
+  list.innerHTML = "";
+  list.appendChild(row(save.nick || "You", byId(save.shooterId), byId(save.keeperId), net.ready, true));
+  if (net.opp) list.appendChild(row(oppName(), byId(safeId(o.taker, "elias")), byId(safeId(o.keeper, "debika")), !!o.ready, false));
+  $("#lobby-status").textContent = net.opp
+    ? net.host
+      ? o.ready && net.ready
+        ? "Both ready. Start when you like."
+        : "Pick your players, then both press Ready."
+      : "Waiting for the host to start."
+    : `Share the code ${net.room.code} with your friend. They open this page, choose Play online and join.`;
+  $("#lobby-settings").hidden = !net.host;
+  const s = settings();
+  const meStart = s.hostRole === "shoot" ? (net.host ? "striker" : "goalkeeper") : net.host ? "goalkeeper" : "striker";
+  $("#lobby-format").textContent = `${s.format === "duel" ? "Striker vs keeper, 5 kicks" : "Full shootout, taking turns"} · you start as ${meStart}.`;
+  ($("#lobby-start") as HTMLButtonElement).disabled = !(net.host && net.opp && net.ready && o.ready);
+  $("#lobby-start").hidden = !net.host;
+  const rb = $("#lobby-ready");
+  rb.setAttribute("aria-pressed", String(net.ready));
+  rb.textContent = net.ready ? "Ready ✓" : "I’m ready";
+}
+
+function syncLobbySettings() {
+  document.querySelectorAll<HTMLInputElement>("input[name=format]").forEach((r) => (r.checked = r.value === hostFormat));
+  document.querySelectorAll<HTMLInputElement>("input[name=hostrole]").forEach((r) => (r.checked = r.value === hostStartRole));
+}
+document.querySelectorAll<HTMLInputElement>("input[name=format]").forEach((r) =>
+  r.addEventListener("change", () => {
+    hostFormat = r.value === "shootout" ? "shootout" : "duel";
+    net?.room.setPresence({ format: hostFormat });
+    renderLobby();
+  }),
+);
+document.querySelectorAll<HTMLInputElement>("input[name=hostrole]").forEach((r) =>
+  r.addEventListener("change", () => {
+    hostStartRole = r.value === "keep" ? "keep" : "shoot";
+    net?.room.setPresence({ hostRole: hostStartRole });
+    renderLobby();
+  }),
+);
+$("#lobby-ready").addEventListener("click", () => {
+  if (!net) return;
+  net.ready = !net.ready;
+  net.room.setPresence({ ready: net.ready });
+  renderLobby();
+});
+$("#lobby-pick").addEventListener("click", () => {
+  mode = "online";
+  openSelect();
+});
+$("#lobby-start").addEventListener("click", () => {
+  if (!net?.host) return;
+  const id = Math.random().toString(36).slice(2, 10);
+  net.room.setPresence({ match: id, k: 0, shot: null, dive: null, kx: null, res: null });
+  startOnlineMatch(id);
+});
+$("#lobby-leave").addEventListener("click", () => {
+  leaveOnline();
+  syncMenu();
+  show("menu");
+});
+$("#to-lobby").addEventListener("click", backToLobby);
+
+function backToLobby() {
+  if (!net) return show("menu");
+  net.matchId = null;
+  net.ready = false;
+  net.room.setPresence({ ready: false, shot: null, dive: null, kx: null, res: null, ...(net.host ? { match: null } : {}) });
+  engine.phase = "idle";
+  engine.online = false;
+  sfx.stopAmbience();
+  renderLobby();
+  show("lobby");
+}
+
+function leaveOnline() {
+  net?.room.leave();
+  net = null;
+  engine.online = false;
+  engine.holdShot = false;
+  $("#to-lobby").hidden = true;
+}
+
+function startOnlineMatch(id: string) {
+  if (!net) return;
+  net.matchId = id;
+  net.lastMatch = id;
+  net.k = 0;
+  net.hostShots = [];
+  net.guestShots = [];
+  net.kicks = [];
+  net.over = false;
+  engine.setDifficulty("medium");
+  $("#practice-switch").hidden = true;
+  $("#pause").hidden = true;
+  $("#team-cpu").hidden = false;
+  $("#team-cpu .team-name").textContent = oppName();
+  show("hud");
+  sfx.startAmbience();
+  onlineKick();
+}
+
+function onlineKick() {
+  if (!net) return;
+  const k = net.k;
+  const role = myRole(k);
+  const striker = picksOf(strikerSide(k)).taker;
+  const keeper = picksOf(strikerSide(k) === "host" ? "guest" : "host").keeper;
+  engine.setCast(striker, keeper);
+  engine.startKick(role, true);
+  engine.snapCamera();
+  net.seenDive = "";
+  net.room.setPresence({ k, shot: null, dive: null, kx: null, res: null });
+  $("#who-shoot").innerHTML = `${face(striker)}<span></span>`;
+  $("#who-shoot span").textContent = `${striker.firstName} (${role === "shoot" ? "you" : oppName()})`;
+  $("#who-keep").innerHTML = `${face(keeper)}<span></span>`;
+  $("#who-keep span").textContent = `${keeper.firstName} (${role === "keep" ? "you" : oppName()})`;
+  $("#meters").hidden = role !== "shoot";
+  $("#shuffle").hidden = role !== "keep";
+  updateOnlineBoard();
+  startTutorial(role);
+  applyRemote();
+}
+
+/** Read the other player's latest state into this kick. */
+function applyRemote() {
+  if (!net?.matchId) return;
+  const o = opp();
+  const k = net.k;
+  if (myRole(k) === "shoot") {
+    // Don't let the striker go before the keeper is on this kick
+    const waiting = o.k !== k;
+    if (waiting !== engine.holdShot) {
+      engine.holdShot = waiting;
+      if (engine.phase === "aim") $("#hint").textContent = waiting ? `Waiting for ${oppName()} to get in goal…` : "Aim, hold Space to charge, release to shoot.";
+    }
+    if (o.kx?.k === k && typeof o.kx.x === "number") engine.remoteKeeperX(Math.max(-1.4, Math.min(1.4, o.kx.x)));
+    if (o.dive?.k === k) {
+      const key = JSON.stringify(o.dive);
+      if (key !== net.seenDive) {
+        net.seenDive = key;
+        engine.remoteDive(o.dive);
+      }
+    }
+    if (o.res?.k === k) engine.remoteResultIn(o.res);
+  } else {
+    engine.holdShot = false;
+    if (o.shot?.k === k && engine.phase === "ready") engine.remoteShot(o.shot);
+  }
+}
+
+engine.onLocalShot = (shot) => net?.room.setPresence({ shot: { ...shot, k: net.k } });
+engine.onLocalDive = (dive) => net?.room.setPresence({ dive: { ...dive, k: net.k } });
+engine.onLocalKeeperX = (x) => net?.room.setPresence({ kx: { k: net.k, x: Math.round(x * 100) / 100 } });
+engine.onLocalResult = (r) => net?.room.setPresence({ res: { ...r, k: net.k } });
+
+function onlineResult(r: KickResult) {
+  if (!net) return;
+  net.kicks.push(r);
+  (strikerSide(net.k) === "host" ? net.hostShots : net.guestShots).push(r.outcome === "goal");
+  if (r.role === "shoot") {
+    save.totals.shots++;
+    if (r.outcome === "goal") save.totals.goals++;
+  } else {
+    save.totals.faced++;
+    if (r.outcome !== "goal") save.totals.saves++;
+  }
+  persist();
+  showBanner(r.label, r.good);
+  updateOnlineBoard();
+  $("#live").textContent = r.label;
+  finishTutorialStep();
+}
+
+function onlineKickDone() {
+  if (!net) return;
+  net.k++;
+  const d = onlineDecided();
+  if (d) endOnline(d);
+  else onlineKick();
+}
+
+function shotsOf(side: Side) {
+  return side === "host" ? net!.hostShots : net!.guestShots;
+}
+
+function onlineDecided(): Side | "done" | null {
+  if (!net) return null;
+  if (settings().format === "duel") return net.k >= 5 ? "done" : null;
+  const h = shotsOf("host");
+  const g = shotsOf("guest");
+  const y = goals(h);
+  const c = goals(g);
+  if (h.length <= 5 && g.length <= 5 && !(h.length === 5 && g.length === 5)) {
+    if (y > c + (5 - g.length)) return "host";
+    if (c > y + (5 - h.length)) return "guest";
+    return null;
+  }
+  if (h.length === g.length && y !== c) return y > c ? "host" : "guest";
+  return null;
+}
+
+function updateOnlineBoard() {
+  if (!net) return;
+  const me = shotsOf(mySide());
+  const them = shotsOf(mySide() === "host" ? "guest" : "host");
+  const duel = settings().format === "duel";
+  const sudden = !duel && me.length >= 5 && them.length >= 5;
+  const slots = sudden ? Math.max(me.length, them.length) + (me.length === them.length ? 1 : 0) : 5;
+  const iShoot = strikerSide(0) === mySide();
+  $("#dots-you").innerHTML = dots(me, duel && !iShoot ? 0 : slots);
+  $("#dots-cpu").innerHTML = dots(them, duel && iShoot ? 0 : slots);
+  $("#score").textContent = duel ? `${goals(iShoot ? me : them)} / 5` : `${goals(me)} – ${goals(them)}`;
+  const turn = myRole(net.k) === "shoot" ? "you shoot" : "you save";
+  $("#status").textContent = duel ? `Kick ${Math.min(net.k + 1, 5)} of 5 · ${turn}` : sudden ? `Sudden death · ${turn}` : `Round ${Math.min(Math.floor(net.k / 2) + 1, 5)} · ${turn}`;
+}
+
+function endOnline(result: Side | "done") {
+  if (!net) return;
+  net.over = true;
+  engine.holdShot = false;
+  sfx.stopAmbience();
+  const duel = settings().format === "duel";
+  const iShoot = strikerSide(0) === mySide();
+  const me = shotsOf(mySide());
+  const them = shotsOf(mySide() === "host" ? "guest" : "host");
+  let title: string;
+  let line: string;
+  let score: string;
+  if (duel) {
+    const scored = goals(iShoot ? me : them);
+    score = `${scored} / 5`;
+    if (iShoot) {
+      title = scored >= 3 ? "STRIKER WINS!" : "KEEPER WINS!";
+      line = `You scored ${scored} of 5 against ${oppName()}.`;
+    } else {
+      title = scored >= 3 ? "STRIKER WINS!" : "KEEPER WINS!";
+      line = `You kept out ${5 - scored} of 5 from ${oppName()}.`;
+    }
+  } else {
+    const won = result === mySide();
+    title = won ? "SHOOTOUT WINNER!" : `${oppName()} wins`;
+    score = `${goals(me)} – ${goals(them)}`;
+    line = me.length > 5 ? (won ? "Won in sudden death." : "Lost in sudden death.") : won ? "Southwestern bragging rights are yours." : "Rematch?";
+    if (won) sfx.crowd("cheer", true);
+  }
+  $("#end-kicker").textContent = `Online · vs ${oppName()}`;
+  $("#end-title").textContent = title;
+  $("#end-score").textContent = score;
+  $("#end-line").textContent = line;
+  $("#end-stats").innerHTML = "";
+  const rematch = $("#rematch") as HTMLButtonElement;
+  rematch.disabled = !net.host;
+  rematch.textContent = net.host ? "Rematch" : "Waiting for host…";
+  $("#to-lobby").hidden = false;
+  show("end");
+}
+
+function onlineRematch() {
+  if (!net?.host) return;
+  const id = Math.random().toString(36).slice(2, 10);
+  net.room.setPresence({ match: id, k: 0, shot: null, dive: null, kx: null, res: null });
+  startOnlineMatch(id);
+}
 
 /* ───────────────────────────── Start ───────────────────────────── */
 
